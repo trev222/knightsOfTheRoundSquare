@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<head>
+	<title></title>
+
+	<!-- // <script type="text/javascript" src="//code.jquery.com/jquery-1.10.2.js"></script> -->
+	<!-- // <script type="text/javascript" src="//code.jquery.com/ui/1.11.0/jquery-ui.js"></script> -->
+	<script type="text/javascript" src="/scripts/jquery-1.10.2.js"></script>
+	<script type="text/javascript" src="/scripts/1.11.0-jquery-ui.js"></script>
+</head>
+
+
+
+<style type="text/css">
+	*{
+		margin: 0px;padding: 0px;
+		-moz-box-sizing: border-box;
+		-webkit-box-sizing: border-box;
+		box-sizing: border-box;
+	}
+	.board{
+		float: left;
+		padding: 10px;
+	}
+	.board.success{
+		background-color: rgba(0,255,0,.2);
+	}
+	.board.failed{
+		background-color: rgba(255,0,0,.2);
+	}
+	.board.selected{
+		background-color: rgba(255,255,0,.2);
+	}
+	.board.selected.success{
+		box-shadow: inset 0px 0px 3px 5px rgba(0,255,0,.5);
+	}
+	.board.selected.failed{
+		box-shadow: inset 0px 0px 3px 5px rgba(255,0,0,.5);
+	}
+
+	.box{
+		margin: 5px;
+		height: 20px; width: 20px;
+		border: 1px solid black;
+		float: left;
+	}
+	.box.on{
+		background-color: blue;
+	}
+	.box.beenHereAlready{
+		background-color: red;
+	}
+	.box.start{
+		background-color: green;
+	}
+	.box.active{
+		border: 4px solid orange;
+	}
+</style>
+
+
+
+<body>
+
+	
+
+</body>
+
+
+
+
+
+
+
+
+
+
+
+
+<script type="text/javascript">
+
+// ============================================================================================
+// == General Start
+// ============================================================================================
+activeOpenBlockArray = [];
+
+function boardFinished(boardElementID){
+	if(!$("#"+boardElementID+" .off").length && 
+		!$("#"+boardElementID+" .beenHereAlready").length){
+		console.log("Success! "+boardElementID+" has been completed!");
+		$("#"+boardElementID).addClass("success");
+	}else{
+		console.log("Failed! "+boardElementID+" was not completed!");
+		$("#"+boardElementID).addClass("failed");
+	}
+	//remove from progress array
+	var index = activeBoards.indexOf(boardElementID);
+	if (index > -1) {
+    activeBoards.splice(index, 1);
+	}
+}
+
+function createBoard(boardElementID,height,width,startX,startY){
+	activeBoards[activeBoards.length] = boardElementID;
+
+	$('body').append('<div class="board" id="'+boardElementID+'"></div>');
+	var w = 1,
+			h = 1;
+	while(h <= height){//height		
+		w = 1;
+		while(w <= width){//width
+			$('#'+boardElementID).append('<div id="'+boardElementID+'-'+w+'-'+h+'" class="box off" x="'+w+'" y="'+h+'"></div>');
+			w++;
+		}
+		$('#'+boardElementID).append('<div style="clear:both;"></div>');
+		h++;
+	}
+	chooseStart(boardElementID,height,width,startX,startY);
+}
+
+function chooseStart(boardElementID,height,width,x,y){
+	if(x == undefined){
+		var x = parseInt(Math.floor((Math.random() * width) + 1));
+	}
+	if(y == undefined){
+		var y = parseInt(Math.floor((Math.random() * height) + 1));
+	}
+	$('#'+boardElementID+'-'+x+'-'+y).addClass("start").addClass("active").removeClass("off");
+	createActiveOpenBlockArray(boardElementID,x,y);
+}
+
+function createActiveOpenBlockArray(boardElementID,x,y){
+	// console.log("Init: x:"+x+" y:"+y);
+	activeOpenBlockArray[boardElementID] = [];
+
+	var top_y = y-1;
+	if($("#"+boardElementID+"-"+x+"-"+top_y).length){
+		// console.log("add top: x"+x+"-top_y"+top_y);
+		// activeOpenBlockArray[boardElementID]['top'] = x+"-"+top_y;
+		activeOpenBlockArray[boardElementID].push(x+"-"+top_y);
+	}
+	var bottom_y = y+1;
+	if($("#"+boardElementID+"-"+x+"-"+bottom_y).length){
+		// console.log("add bottom: x"+x+"-bottom_y"+bottom_y);
+		// activeOpenBlockArray[boardElementID]['bottom'] = x+"-"+bottom_y;
+		activeOpenBlockArray[boardElementID].push(x+"-"+bottom_y);
+	}
+	var right_x = x+1;
+	if($("#"+boardElementID+"-"+right_x+"-"+y).length){
+		// console.log("add right: right_x"+right_x+"-y"+y);
+		// activeOpenBlockArray[boardElementID]['right'] = right_x+"-"+y;
+		activeOpenBlockArray[boardElementID].push(right_x+"-"+y);
+	}
+	var left_x = x-1;
+	if($("#"+boardElementID+"-"+left_x+"-"+y).length){
+		// console.log("add left: left_x"+left_x+"-y"+y);
+		// activeOpenBlockArray[boardElementID]['left'] = left_x+"-"+y;
+		activeOpenBlockArray[boardElementID].push(left_x+"-"+y);
+	}
+	
+	// console.log(activeOpenBlockArray);
+}
+
+
+
+function moveToNext(boardElementID,direction){
+	var x = $('#'+boardElementID+' .active').attr('x'),
+			y = $('#'+boardElementID+' .active').attr('y');
+
+	switch(direction){
+		case "up": y--;break;
+		case "down": y++;break;
+		case "right": x++;break;
+		case "left": x--;break;
+		default:console.log("moveToNext(): direction not recognized: "+direction);break;
+	}
+	var removeFromActiveArray = x+"-"+y,
+			removeFromActiveArrayIndex = activeOpenBlockArray[boardElementID].indexOf(removeFromActiveArray);
+	if(removeFromActiveArrayIndex != -1){
+		// console.log(activeOpenBlockArray[boardElementID]);
+		activeOpenBlockArray[boardElementID].splice(removeFromActiveArrayIndex,1);
+		// console.log("spliced: "+removeFromActiveArrayIndex);
+		// console.log(activeOpenBlockArray[boardElementID]);
+	}
+
+
+
+	moveToThisElement = '#'+boardElementID+'-'+x+'-'+y;
+	if(!$(moveToThisElement).length){
+		console.log("moveToNext(): asked to move to this element but it doesn't exist: "+moveToThisElement);
+		boardFinished(boardElementID);
+		return;
+	}
+	if($(moveToThisElement).hasClass("on")){
+		$(moveToThisElement).addClass("beenHereAlready");
+		boardFinished(boardElementID);
+	}
+	if($(moveToThisElement).hasClass("start")){
+		boardFinished(boardElementID);
+	}
+
+	$('#'+boardElementID+' .active').removeClass("active");
+	$(moveToThisElement).addClass("active on").removeClass("off");
+}
+
+
+
+function doesBlockExist(boardElementID,x,y){
+	if($("#"+boardElementID+"-"+x+"-"+y).length){
+		return true;
+	}
+	return false;
+}
+
+function isBlockOpen(boardElementID,x,y){
+	if($("#"+boardElementID+"-"+x+"-"+y).hasClass("off")){
+		return true;
+	}
+	return false;
+}
+function blockIsOpenAndExists(boardElementID,x,y){
+	if(doesBlockExist(boardElementID,x,y) && isBlockOpen(boardElementID,x,y)){
+		return true;
+	}
+	return false;
+}
+function isBlockStarter(boardElementID,x,y){
+	if($("#"+boardElementID+"-"+x+"-"+y).hasClass("start")){
+		return true;
+	}
+	return false;
+}
+
+
+
+function onlyOneOpenBlockRemains(boardElementID){
+	var count = $("#"+boardElementID+" .off").length;
+	if(count <= 1){
+		console.log("onlyOneOpenBlockRemains():true");
+		return true;
+	}
+	console.log("onlyOneOpenBlockRemains():false");
+	return false;
+}
+
+function isLastLineToStarter(boardElementID,x,y){
+	// ooo this is bad, we shouldn't be making this array each time
+	offlimitsArray = [];
+
+	var result = activeOpenBlockArray[boardElementID][0],
+			result = result.split("-"), 
+			open_x = parseInt(result[0]),
+			open_y = parseInt(result[1]);
+
+	// console.log("isLastLineToStarter(): viewBlockMoveOptions:thisBoard:"+boardElementID+" x:"+open_x+" y:"+open_y);
+	var data = viewBlockMoveOptions(boardElementID,open_x,open_y);
+
+}
+
+
+
+
+function viewBlockMoveOptions(boardElementID,x,y){
+	// console.log("viewBlockMoveOptions x:"+x+" y:"+y);
+
+	var data = [];
+	for (var i = 0; i < 4; i++) {
+		switch (i){
+			case 0://up
+				var pos = "up", cord = y,
+						cordIncrementor = -1;
+				break;
+			case 1://down
+				var pos = "down", cord = y,
+						cordIncrementor = 1;
+				break;	
+			case 2://right
+				var pos = "right"; cord = x,
+						cordIncrementor = 1;
+				break;
+			case 3://left
+				var pos = "left"; cord = x,
+						cordIncrementor = -1;
+				break;
+			default:
+				break;
+		}
+
+		data[pos] = []; 
+		data[pos]['moveableAmount'] = 0;
+		data[pos]['ranIntoStartBlock'] = false;
+		var checkPos = cord+cordIncrementor;
+		
+		n = 0;
+		while(n <= 100){//up or down
+			if(i == 0 || i == 1){
+				// console.log("pos: "+pos+" x:"+x+" checkPos(y): "+checkPos);
+
+				if(!blockIsOpenAndExists(boardElementID,x,checkPos)){
+					// console.log("This block does not exist or is not open....pos: "+pos+" x:"+x+" checkPos(y): "+checkPos);
+					if(isBlockStarter(boardElementID,x,checkPos)){
+						data[pos]['ranIntoStartBlock'] = true;
+					}
+					break;
+				}
+			}else{//right or left
+				// console.log("pos: "+pos+" y:"+y+" checkPos(x): "+checkPos);
+
+				if(!blockIsOpenAndExists(boardElementID,checkPos,y)){
+					// console.log("This block does not exist or is not open....pos: "+pos+" x:"+x+" checkPos(y): "+checkPos);
+					if(isBlockStarter(boardElementID,checkPos,y)){
+						data[pos]['ranIntoStartBlock'] = true;
+					}
+					break;
+				}
+			}			
+			data[pos]['moveableAmount']++;
+			checkPos += cordIncrementor;
+
+			if(n >= 100){
+				console.log("n is too long, increase if this is not an error: "+n);
+				break;
+			}
+			n++;
+		}	
+	};
+	return data;
+}
+// console.log(viewBlockMoveOptions(thisBoard,x,y));
+
+
+// ============================================================================================
+// == General End
+// ============================================================================================
+// == The Brains Start
+// ============================================================================================
+
+function isThisBlockNaked(boardElementID,move){//Naked means, is it empty on 3 sides
+	var x =	parseInt($("#"+boardElementID+" .active").attr('x')),
+			y = parseInt($("#"+boardElementID+" .active").attr('y'));
+	if(move == "up"){y--;
+	}else if(move == "down"){y++;
+	}else if(move == "right"){x++;
+	}else if(move == "left"){x--;
+	}else{
+		console.log("isThisBlockNaked() move not recognized: "+move);return;
+	}
+	console.log("testing move:"+move+" x:"+x+"y:"+y);
+	var nakedBlocks = 0;
+	for (var n = 1; n <= 4; n++) {
+		if(n == 1){//up
+			y_hold = y--;
+		}else if(n == 2){//down
+			y_hold = y++;
+		}else if(n == 3){//right
+			x_hold = x++;
+		}else if(n == 4){//left
+			x_hold = x--;
+		}else{n++;break;}
+		if(n == 1 || n == 2){
+			if(blockIsOpenAndExists(boardElementID,x,y_hold) && !isBlockStarter(boardElementID,x,y_hold)){
+				console.log("Naked n: "+n);
+				nakedBlocks++;
+			}
+		}else{
+			if(blockIsOpenAndExists(boardElementID,x_hold,y) && !isBlockStarter(boardElementID,x_hold,y)){
+				console.log("Naked n: "+n);
+				nakedBlocks++;
+			}
+		}
+	};
+	if(nakedBlocks >= 3){
+		console.log("NakedBlocks: "+nakedBlocks);
+		return true;
+	}
+	return false;
+}
+
+
+function willThisMoveBlockStarter(boardElementID,move){
+	if(activeOpenBlockArray[boardElementID].length > 1){
+		return false;
+	}
+
+	var x =	parseInt($("#"+boardElementID+" .active").attr('x')),
+			y = parseInt($("#"+boardElementID+" .active").attr('y'));
+	if(move == "up"){y--;
+	}else if(move == "down"){y++;
+	}else if(move == "right"){x++;
+	}else if(move == "left"){x--;
+	}else{
+		console.log("willThisMoveBlockStarter() move not recognized: "+move);return;
+	}
+
+
+	var foo = x+"-"+y;
+	if(activeOpenBlockArray[boardElementID].indexOf(foo) != -1){
+		if(!onlyOneOpenBlockRemains(boardElementID)){
+			return true;
+		}
+	}
+	return false;
+}
+
+
+
+
+function thinkTank(){
+	// console.log("thinkTank thinkTank think think think");
+	for (var i = 0; i < activeBoards.length; i++) {
+		var thisBoard = activeBoards[i],
+				x = $('#'+thisBoard+" .active").attr('x'),
+				x = parseInt(x),
+				y = $('#'+thisBoard+" .active").attr('y'),
+				y = parseInt(y);
+
+
+		var results = viewBlockMoveOptions(thisBoard,x,y);
+		// console.log(thisBoard);
+		// console.log(results);
+		
+		var bestMove = "none";
+
+		// If there's no moves or only one move, 
+		// then it's quite obvious isn't it
+		if(results['up']['moveableAmount'] == 0 &&
+			results['down']['moveableAmount'] == 0 && 
+			results['right']['moveableAmount'] == 0 &&
+			results['left']['moveableAmount'] == 0)
+		{
+			if(results['up']['ranIntoStartBlock']){	bestMove = "up";
+			}else if(results['down']['ranIntoStartBlock']){	bestMove = "down";
+			}else if(results['right']['ranIntoStartBlock']){	bestMove = "right";
+			}else if(results['left']['ranIntoStartBlock']){	bestMove = "left";
+			}else{
+				console.log('thinkTank():'+thisBoard+': has no where to move, finished');
+				boardFinished(thisBoard);
+				i--;continue;
+			}
+		}else if(results['left']['moveableAmount'] == 0 && 
+			results['down']['moveableAmount'] == 0 && 
+			results['right']['moveableAmount'] == 0){
+			var bestMove = "up";
+		}else if(results['up']['moveableAmount'] == 0 && 
+			results['left']['moveableAmount'] == 0 && 
+			results['right']['moveableAmount'] == 0){
+			var bestMove = "down";
+		}else if(results['up']['moveableAmount'] == 0 && 
+			results['left']['moveableAmount'] == 0 && 
+			results['down']['moveableAmount'] == 0){
+			var bestMove = "right";
+		}else if(results['up']['moveableAmount'] == 0 && 
+			results['down']['moveableAmount'] == 0 && 
+			results['right']['moveableAmount'] == 0){
+			var bestMove = "left";
+		}
+
+
+
+		if(bestMove == "none"){//bypass dis shiz for speedz
+			n = 1;
+			while(n <= 4){
+				if(n == 1){
+					var pos = "up";
+				}else if(n == 2){
+					var pos = "down";
+				}else if(n == 3){
+					var pos = "right";
+				}else if(n == 4){
+					var pos = "left";
+				}else{n++;break;}
+				if(results[pos]['moveableAmount'] == 0){
+					n++;continue;
+				}
+				if(bestMove == "none" || results[pos]['moveableAmount'] < results[bestMove]['moveableAmount']){
+					// console.log("changing bestMove from "+bestMove+" to "+pos);
+					// previousBest = bestMove;
+					bestMove = pos;
+				}
+				n++;
+			}
+
+
+
+			if(isThisBlockNaked(thisBoard,bestMove)){
+				console.log("Naked lass: "+thisBoard);
+				//look for other blocks that are naked, if any other block isn't naked pick it
+				var options = [];
+				for (var k = 1; k <= 4; k++) {
+					if(k == 1){
+						var option = "up";
+					}else if(k == 2){
+						var option = "down";
+					}else if(k == 3){
+						var option = "right";
+					}else{
+						var option = "left";
+					}
+					if(results[option]['moveableAmount'] != 0 && !isThisBlockNaked(thisBoard,option)){
+						options.push(option);
+					}
+				};
+				if(options.length == 1){
+					bestMove = options[0];
+				}else if(options.length >= 1){
+					//pick the best nonnaked block
+					console.log("Rare to come here: "+thisBoard);
+				}
+				//else everybodies naked! move on
+			}
+
+			if(willThisMoveBlockStarter(thisBoard,bestMove)){
+				if(bestMove == "up" || bestMove == "down"){
+					var otherDirection1 = "right",
+							otherDirection2 = "left";
+				}else{
+					var otherDirection1 = "up",
+							otherDirection2 = "down";
+				}
+				switch(bestMove){
+					case "up":var opposite = "down";break;
+					case "down":var opposite = "up";break;
+					case "right":var opposite = "left";break;
+					case "left":var opposite = "right";break;
+					default:console.log("Move not recognized");return;;
+				}
+
+				if(results[opposite]['moveableAmount'] != 0){
+					bestMove = opposite;
+				}else{
+					if(results[otherDirection1]['moveableAmount'] != 0 && results[otherDirection2]['moveableAmount'] != 0){
+						if(results[otherDirection1]['moveableAmount'] < results[otherDirection2]['moveableAmount']){
+							bestMove = otherDirection1;
+						}else{
+							bestMove = otherDirection2;
+						}
+					}else if(results[otherDirection1]['moveableAmount'] == 0){
+						bestMove = otherDirection2;
+					}else if(results[otherDirection2]['moveableAmount'] == 0){
+						bestMove = otherDirection1;
+					}
+				}
+			}
+		}
+		
+		
+
+
+		moveToNext(thisBoard,bestMove);
+
+
+	};
+	// console.log("thinkTank done work");
+}
+
+
+
+
+// ============================================================================================
+// == The Brains End
+// ============================================================================================
+// == Operators and inits Start
+// ============================================================================================
+
+
+
+
+
+activeBoards = [];
+
+var height = 8,
+		width = 8;
+// createBoard("fixed1",height,width,2,3);// is fixable by forced movement
+// createBoard("fixed2",height,width,6,8);// is fixable by a straight line
+// createBoard("fixed3",height,width,5,8);
+// createBoard("fixed4",height,width,4,4);
+
+createBoard("alpha",height,width);
+// createBoard("beta",height,width);
+// createBoard("charlie",height,width);
+// createBoard("delta",height,width);
+// createBoard("echo",height,width);
+// createBoard("foxtrot",height,width);
+// createBoard("zeta",height,width);
+// createBoard("omega",height,width);
+
+
+$('.board').on("click",function(){
+	if($(this).hasClass("selected")){
+		$('.board').removeClass("selected");
+		return;
+	}
+	$('.board').removeClass("selected");
+	$(this).addClass("selected");	
+});
+window.addEventListener("keydown", function(e) {
+    if([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) {
+        e.preventDefault();
+    }
+}, false);
+
+$('body').on("keyup",function(e){
+	// console.log("received key: "+e.keyCode);
+	switch(e.keyCode){
+		case 32://space
+			var direction = "space";
+			break;
+		case 39://right
+			var direction = "right",
+					selected = $('.selected').attr("id");
+			break;
+		case 37://left
+			var direction = "left",
+					selected = $('.selected').attr("id");
+			break;
+		case 38://up
+			var direction = "up",
+					selected = $('.selected').attr("id");
+			break;
+		case 40://down
+			var direction = "down",
+					selected = $('.selected').attr("id");
+			break;
+		default:
+			return;
+			break;
+	}
+	// console.log(direction);
+	if(direction == "space"){
+		thinkTank();
+		return;
+	}
+	if($('.selected').length){
+		moveToNext(selected,direction);
+	}
+	
+});
+
+
+
+
+
+</script>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
