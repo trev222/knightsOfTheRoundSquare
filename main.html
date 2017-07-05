@@ -238,6 +238,7 @@ function blockIsOpenAndExists(boardElementID,x,y){
 
 function blockHasClass(className,boardElementID,x,y){
 	if($("#"+boardElementID+"-"+x+"-"+y).hasClass(className)){
+		console.log("map class firing");
 		return true;
 	}
 	return false;
@@ -255,7 +256,7 @@ function onlyOneOpenBlockRemains(boardElementID){
 
 
 function viewBlockMoveOptions(boardElementID,x,y){
-	// console.log("viewBlockMoveOptions x:"+x+" y:"+y);
+	console.log("viewBlockMoveOptions x:"+x+" y:"+y);
 
 	var data = [];
 	for (var i = 0; i < 4; i++) {
@@ -289,12 +290,12 @@ function viewBlockMoveOptions(boardElementID,x,y){
 		max = maxMoveRange(boardElementID);
 		while(n <= max){
 			if(i == 0 || i == 1){//up or down
-				console.log("pos: "+pos+" x:"+x+" checkPos(y): "+checkPos);
+				// console.log("pos: "+pos+" x:"+x+" checkPos(y): "+checkPos);
 				if(!blockIsOpenAndExists(boardElementID,x,checkPos) || blockHasClass("map",boardElementID,x,checkPos)){
 					break;
 				}
 			}else{//right or left
-				console.log("pos: "+pos+" y:"+y+" checkPos(x): "+checkPos);
+				// console.log("pos: "+pos+" y:"+y+" checkPos(x): "+checkPos);
 				if(!blockIsOpenAndExists(boardElementID,checkPos,y) || blockHasClass("map",boardElementID,checkPos,y)){
 					break;
 				}
@@ -433,8 +434,12 @@ function mapStartToBlockHasNoLeftOvers(boardElementID,x,y){
 
 	var openBlockStartPosCords = activeOpenBlockArray[boardElementID][0],
 			openBlockStartPosCordsSplit = openBlockStartPosCords.split("-"),
-			openBlockStart_x = openBlockStartPosCords[0],
-			openBlockStart_y = openBlockStartPosCords[1];
+			openBlockStart_x = openBlockStartPosCordsSplit[0],
+			openBlockStart_y = openBlockStartPosCordsSplit[1];
+
+	// console.log("openBlockStart_x:"+openBlockStart_x);
+	// console.log("openBlockStart_y:"+openBlockStart_y);
+	// return;
 
 	map.push(openBlockStart_x+"-"+openBlockStart_y);
 	$("#"+boardElementID+"-"+openBlockStart_x+"-"+openBlockStart_y).addClass("map");
@@ -488,9 +493,9 @@ function willThisMoveBlockStarter(boardElementID,move){
 	
 
 
-	// if(activeOpenBlockArray[boardElementID].length > 1){
-	// 	return false;
-	// }
+	if(activeOpenBlockArray[boardElementID].length > 1){
+		return false;
+	}
 
 
 	var x =	parseInt($("#"+boardElementID+" .active").attr('x')),
@@ -502,8 +507,8 @@ function willThisMoveBlockStarter(boardElementID,move){
 	}else{
 		console.log("willThisMoveBlockStarter() move not recognized: "+move);return;
 	}
-	mapStartToBlockHasNoLeftOvers(boardElementID,x,y);
-	return false;
+	// mapStartToBlockHasNoLeftOvers(boardElementID,x,y);
+	// return false;
 
 	if(mapStartToBlockHasNoLeftOvers(boardElementID,x,y)){
 		return true;
@@ -709,10 +714,12 @@ var height = 8,
 // createBoard("omega",height,width,3,7);//broken
 // createBoard("zeta",height,width,6,7);//broken
 
-for (var i = 0; i < 1; i++) {
-	var foo = "place"+i;
-	createBoard(foo,height,width);
-};
+
+createBoard("alpha",height,width,3,1);
+// for (var i = 0; i < 1; i++) {
+// 	var foo = "place"+i;
+// 	createBoard(foo,height,width);
+// };
 
 
 $('.board').on("click",function(){
