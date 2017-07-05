@@ -2,10 +2,9 @@
 <head>
 	<title></title>
 
-	<!-- // <script type="text/javascript" src="//code.jquery.com/jquery-1.10.2.js"></script> -->
-	<!-- // <script type="text/javascript" src="//code.jquery.com/ui/1.11.0/jquery-ui.js"></script> -->
-	<script type="text/javascript" src="/scripts/jquery-1.10.2.js"></script>
-	<script type="text/javascript" src="/scripts/1.11.0-jquery-ui.js"></script>
+	<script type="text/javascript" src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+	<!-- // <script type="text/javascript" src="/scripts/jquery-1.10.2.js"></script> -->
+	<!-- // <script type="text/javascript" src="/scripts/1.11.0-jquery-ui.js"></script> -->
 </head>
 
 
@@ -19,7 +18,7 @@
 	}
 	.board{
 		float: left;
-		padding: 10px;
+		padding: 5px;
 	}
 	.board.success{
 		background-color: rgba(0,255,0,.2);
@@ -38,7 +37,7 @@
 	}
 
 	.box{
-		margin: 5px;
+		margin: 3px;
 		height: 20px; width: 20px;
 		border: 1px solid black;
 		float: left;
@@ -51,6 +50,9 @@
 	}
 	.box.start{
 		background-color: green;
+	}
+	.box.map{
+		background-color: rgba(255,0,255,.4);
 	}
 	.box.active{
 		border: 4px solid orange;
@@ -82,6 +84,7 @@
 // == General Start
 // ============================================================================================
 activeOpenBlockArray = [];
+boardsToSplice = [];
 
 function boardFinished(boardElementID){
 	if(!$("#"+boardElementID+" .off").length && 
@@ -95,14 +98,26 @@ function boardFinished(boardElementID){
 	//remove from progress array
 	var index = activeBoards.indexOf(boardElementID);
 	if (index > -1) {
-    activeBoards.splice(index, 1);
+		boardsToSplice.push(boardElementID);
+    // activeBoards.splice(index, 1);
 	}
 }
+function spliceFinishedBoards(){
+	for (var i = 0; i < boardsToSplice.length; i++) {
+		var board = boardsToSplice[i];
+
+		var index = activeBoards.indexOf(board);
+		if (index > -1) {
+	    activeBoards.splice(index, 1);
+		}
+	};
+}
+
 
 function createBoard(boardElementID,height,width,startX,startY){
 	activeBoards[activeBoards.length] = boardElementID;
 
-	$('body').append('<div class="board" id="'+boardElementID+'"></div>');
+	$('body').append('<div class="board" size="'+width+'x'+height+'" id="'+boardElementID+'"></div>');
 	var w = 1,
 			h = 1;
 	while(h <= height){//height		
@@ -124,7 +139,7 @@ function chooseStart(boardElementID,height,width,x,y){
 	if(y == undefined){
 		var y = parseInt(Math.floor((Math.random() * height) + 1));
 	}
-	$('#'+boardElementID+'-'+x+'-'+y).addClass("start").addClass("active").removeClass("off");
+	$('#'+boardElementID+'-'+x+'-'+y).addClass("start active on").removeClass("off");
 	createActiveOpenBlockArray(boardElementID,x,y);
 }
 
@@ -134,30 +149,21 @@ function createActiveOpenBlockArray(boardElementID,x,y){
 
 	var top_y = y-1;
 	if($("#"+boardElementID+"-"+x+"-"+top_y).length){
-		// console.log("add top: x"+x+"-top_y"+top_y);
-		// activeOpenBlockArray[boardElementID]['top'] = x+"-"+top_y;
 		activeOpenBlockArray[boardElementID].push(x+"-"+top_y);
 	}
 	var bottom_y = y+1;
 	if($("#"+boardElementID+"-"+x+"-"+bottom_y).length){
-		// console.log("add bottom: x"+x+"-bottom_y"+bottom_y);
-		// activeOpenBlockArray[boardElementID]['bottom'] = x+"-"+bottom_y;
 		activeOpenBlockArray[boardElementID].push(x+"-"+bottom_y);
 	}
 	var right_x = x+1;
 	if($("#"+boardElementID+"-"+right_x+"-"+y).length){
-		// console.log("add right: right_x"+right_x+"-y"+y);
-		// activeOpenBlockArray[boardElementID]['right'] = right_x+"-"+y;
 		activeOpenBlockArray[boardElementID].push(right_x+"-"+y);
 	}
 	var left_x = x-1;
 	if($("#"+boardElementID+"-"+left_x+"-"+y).length){
-		// console.log("add left: left_x"+left_x+"-y"+y);
-		// activeOpenBlockArray[boardElementID]['left'] = left_x+"-"+y;
 		activeOpenBlockArray[boardElementID].push(left_x+"-"+y);
 	}
 	
-	// console.log(activeOpenBlockArray);
 }
 
 
@@ -223,37 +229,26 @@ function blockIsOpenAndExists(boardElementID,x,y){
 	}
 	return false;
 }
-function isBlockStarter(boardElementID,x,y){
-	if($("#"+boardElementID+"-"+x+"-"+y).hasClass("start")){
+// function isBlockStarter(boardElementID,x,y){
+// 	if($("#"+boardElementID+"-"+x+"-"+y).hasClass("start")){
+// 		return true;
+// 	}
+// 	return false;
+// }
+
+function blockHasClass(className,boardElementID,x,y){
+	if($("#"+boardElementID+"-"+x+"-"+y).hasClass(className)){
 		return true;
 	}
 	return false;
 }
-
-
 
 function onlyOneOpenBlockRemains(boardElementID){
 	var count = $("#"+boardElementID+" .off").length;
 	if(count <= 1){
-		console.log("onlyOneOpenBlockRemains():true");
 		return true;
 	}
-	console.log("onlyOneOpenBlockRemains():false");
 	return false;
-}
-
-function isLastLineToStarter(boardElementID,x,y){
-	// ooo this is bad, we shouldn't be making this array each time
-	offlimitsArray = [];
-
-	var result = activeOpenBlockArray[boardElementID][0],
-			result = result.split("-"), 
-			open_x = parseInt(result[0]),
-			open_y = parseInt(result[1]);
-
-	// console.log("isLastLineToStarter(): viewBlockMoveOptions:thisBoard:"+boardElementID+" x:"+open_x+" y:"+open_y);
-	var data = viewBlockMoveOptions(boardElementID,open_x,open_y);
-
 }
 
 
@@ -287,29 +282,20 @@ function viewBlockMoveOptions(boardElementID,x,y){
 
 		data[pos] = []; 
 		data[pos]['moveableAmount'] = 0;
-		data[pos]['ranIntoStartBlock'] = false;
+		// data[pos]['ranIntoStartBlock'] = false;
 		var checkPos = cord+cordIncrementor;
 		
-		n = 0;
-		while(n <= 100){//up or down
-			if(i == 0 || i == 1){
-				// console.log("pos: "+pos+" x:"+x+" checkPos(y): "+checkPos);
-
-				if(!blockIsOpenAndExists(boardElementID,x,checkPos)){
-					// console.log("This block does not exist or is not open....pos: "+pos+" x:"+x+" checkPos(y): "+checkPos);
-					if(isBlockStarter(boardElementID,x,checkPos)){
-						data[pos]['ranIntoStartBlock'] = true;
-					}
+		n = 0; 
+		max = maxMoveRange(boardElementID);
+		while(n <= max){
+			if(i == 0 || i == 1){//up or down
+				console.log("pos: "+pos+" x:"+x+" checkPos(y): "+checkPos);
+				if(!blockIsOpenAndExists(boardElementID,x,checkPos) || blockHasClass("map",boardElementID,x,checkPos)){
 					break;
 				}
 			}else{//right or left
-				// console.log("pos: "+pos+" y:"+y+" checkPos(x): "+checkPos);
-
-				if(!blockIsOpenAndExists(boardElementID,checkPos,y)){
-					// console.log("This block does not exist or is not open....pos: "+pos+" x:"+x+" checkPos(y): "+checkPos);
-					if(isBlockStarter(boardElementID,checkPos,y)){
-						data[pos]['ranIntoStartBlock'] = true;
-					}
+				console.log("pos: "+pos+" y:"+y+" checkPos(x): "+checkPos);
+				if(!blockIsOpenAndExists(boardElementID,checkPos,y) || blockHasClass("map",boardElementID,checkPos,y)){
 					break;
 				}
 			}			
@@ -325,61 +311,187 @@ function viewBlockMoveOptions(boardElementID,x,y){
 	};
 	return data;
 }
-// console.log(viewBlockMoveOptions(thisBoard,x,y));
+// console.log(viewBlockMoveOptions(boardElementID,x,y));
 
+function moveCordsOneBlock(dir,x,y){
+	if(dir == "up"){
+		y--;
+	}else if(dir == "down"){
+		y++;
+	}else if(dir == "right"){
+		x++;
+	}else if(dir == "left"){
+		x--;
+	}else{
+		console.log("moveCordsDirection() direction not recognized: "+dir);
+	}
+	// console.log("moveCordsOneBlock() dir:"+dir);
+	return {"x":x,"y":y};
+}
+
+function getOppositeDirections(dir){
+	// console.log("getOppositeDirections");
+	// console.log("dir:"+dir);
+	if(dir == "up"){
+		var opp = "down",od1 = "right",od2 = "left";
+	}else if(dir == "down"){
+		var opp = "up",od1 = "right",od2 = "left";
+	}else if(dir == "right"){
+		var opp = "left", od1 = "up", od2 = "down";
+	}else if(dir == "left"){
+		var opp = "right", od1 = "up", od2 = "down";
+	}else{
+		console.log("getOppositeDirections() direction not recognized: "+dir); return	false;
+	}
+	// console.log("opp:"+opp);
+	return {"opp":opp,"od1":od1,"od2":od2};
+}
+
+function boardTotalBlocks(boardElementID){
+	var size = $('#'+boardElementID).attr('size'),
+			sizeArray = size.split("x"),
+			widthBlocks = parseInt(sizeArray[0]),
+			heightBlocks = parseInt(sizeArray[1]),
+			totalBlocks = widthBlocks*heightBlocks;
+	return totalBlocks;
+}
+
+function maxMoveRange(boardElementID){
+	var size = $('#'+boardElementID).attr('size'),
+			sizeArray = size.split("x"),
+			widthBlocks = parseInt(sizeArray[0]),
+			heightBlocks = parseInt(sizeArray[1]);
+	if(widthBlocks > heightBlocks){
+		return widthBlocks;
+	}else{
+		return heightBlocks;
+	}
+}
+
+function percentageOfTheBoardTraversed(boardElementID){
+	var totalBlocks = boardTotalBlocks(boardElementID),
+			onBlocks = $('#'+boardElementID+" .on").length,
+			percentage = onBlocks/totalBlocks;
+	return percentage;
+}
 
 // ============================================================================================
 // == General End
 // ============================================================================================
-// == The Brains Start
+// == thinkTankBrainFood Start
 // ============================================================================================
 
-function isThisBlockNaked(boardElementID,move){//Naked means, is it empty on 3 sides
-	var x =	parseInt($("#"+boardElementID+" .active").attr('x')),
-			y = parseInt($("#"+boardElementID+" .active").attr('y'));
-	if(move == "up"){y--;
-	}else if(move == "down"){y++;
-	}else if(move == "right"){x++;
-	}else if(move == "left"){x--;
-	}else{
-		console.log("isThisBlockNaked() move not recognized: "+move);return;
-	}
-	console.log("testing move:"+move+" x:"+x+"y:"+y);
-	var nakedBlocks = 0;
-	for (var n = 1; n <= 4; n++) {
-		if(n == 1){//up
-			y_hold = y--;
-		}else if(n == 2){//down
-			y_hold = y++;
-		}else if(n == 3){//right
-			x_hold = x++;
-		}else if(n == 4){//left
-			x_hold = x--;
+function closestMove(movesArray){
+	bestMove = "none";
+	n = 1;
+	while(n <= 4){
+		if(n == 1){
+			var pos = "up";
+		}else if(n == 2){
+			var pos = "down";
+		}else if(n == 3){
+			var pos = "right";
+		}else if(n == 4){
+			var pos = "left";
 		}else{n++;break;}
-		if(n == 1 || n == 2){
-			if(blockIsOpenAndExists(boardElementID,x,y_hold) && !isBlockStarter(boardElementID,x,y_hold)){
-				console.log("Naked n: "+n);
-				nakedBlocks++;
-			}
-		}else{
-			if(blockIsOpenAndExists(boardElementID,x_hold,y) && !isBlockStarter(boardElementID,x_hold,y)){
-				console.log("Naked n: "+n);
-				nakedBlocks++;
-			}
+		if(movesArray[pos]['moveableAmount'] == 0){
+			n++;continue;
 		}
-	};
-	if(nakedBlocks >= 3){
-		console.log("NakedBlocks: "+nakedBlocks);
+		if(bestMove == "none" || movesArray[pos]['moveableAmount'] < movesArray[bestMove]['moveableAmount']){
+			// console.log("changing bestMove from "+bestMove+" to "+pos);
+			// previousBest = bestMove;
+			bestMove = pos;
+		}
+		n++;
+	}
+	return bestMove;
+}
+
+function isThisMoveOpenOnBothSides(boardElementID,dir,cur_x,cur_y){//Naked means, is it empty on 3 sides
+	
+	var nextMoveCords = moveCordsOneBlock(dir,cur_x,cur_y);
+
+	var oppDirs = getOppositeDirections(dir);
+
+	var od1_cords = moveCordsOneBlock(oppDirs['od1'],nextMoveCords['x'],nextMoveCords['y']);
+	var od2_cords = moveCordsOneBlock(oppDirs['od2'],nextMoveCords['x'],nextMoveCords['y']);
+
+	if(blockIsOpenAndExists(boardElementID,od1_cords["x"],od1_cords["y"]) &&
+		blockIsOpenAndExists(boardElementID,od2_cords["x"],od2_cords["y"])){
+		// console.log("TRUE move dir:"+dir+" cur_x:"+cur_x+" cur_y:"+cur_y);
 		return true;
 	}
 	return false;
 }
 
+// them english skills payin off arent they
+function mapStartToBlockHasNoLeftOvers(boardElementID,x,y){
+	console.log("mapFromStartToThisBlock called: x:"+x+" y:"+y);
+	var totalOffBlocks = $("#"+boardElementID+" .off").length;
+	var map = [];
+
+
+	var openBlockStartPosCords = activeOpenBlockArray[boardElementID][0],
+			openBlockStartPosCordsSplit = openBlockStartPosCords.split("-"),
+			openBlockStart_x = openBlockStartPosCords[0],
+			openBlockStart_y = openBlockStartPosCords[1];
+
+	map.push(openBlockStart_x+"-"+openBlockStart_y);
+	$("#"+boardElementID+"-"+openBlockStart_x+"-"+openBlockStart_y).addClass("map");
+
+	var	current_x = openBlockStart_x,
+			current_y = openBlockStart_y,
+			n = 0,
+			totalBlocks = boardTotalBlocks(boardElementID);
+	while(n <= totalBlocks){
+		var options = viewBlockMoveOptions(boardElementID,current_x,current_y);
+				console.log("options:");
+				console.log(options);
+		var bestMove = closestMove(options);
+				console.log("bestMove:"+bestMove);
+		var moveResults = moveCordsOneBlock(bestMove,current_x,current_y);
+				console.log("moveResults:");
+				console.log(moveResults);
+
+		current_x = moveResults['x'],
+		current_y	= moveResults['y'];
+		var indexMe = current_x+"-"+current_y,
+				index = map.indexOf(indexMe);
+		if(map.indexOf(indexMe) == -1){
+			map.push(indexMe);
+			$("#"+boardElementID+"-"+current_x+"-"+current_y).addClass("map");
+		}else{
+			console.log("mapStartToBlockHasLeftOvers() asked to index something that's already here: newIndex:"+indexMe);
+			console.log(map);
+			return false;
+		}
+
+		//found our move to block cords
+		if(x == new_x && y == new_y){
+			break;
+		}
+		n++;
+	}
+	// $('#'+boardElementID+" .map").removeClass("map");
+	if(map.length == totalOffBlocks){
+		console.log("NoLeftOvers: totalOffBlocks:"+totalOffBlocks+" map.length:"+map.length);
+		return true;
+	}
+	console.log("HasLeftOvers: totalOffBlocks:"+totalOffBlocks+" map.length:"+map.length);
+	return false;
+
+}
 
 function willThisMoveBlockStarter(boardElementID,move){
-	if(activeOpenBlockArray[boardElementID].length > 1){
-		return false;
-	}
+	// console.log(activeOpenBlockArray[boardElementID]);
+
+	
+
+
+	// if(activeOpenBlockArray[boardElementID].length > 1){
+	// 	return false;
+	// }
+
 
 	var x =	parseInt($("#"+boardElementID+" .active").attr('x')),
 			y = parseInt($("#"+boardElementID+" .active").attr('y'));
@@ -390,32 +502,41 @@ function willThisMoveBlockStarter(boardElementID,move){
 	}else{
 		console.log("willThisMoveBlockStarter() move not recognized: "+move);return;
 	}
+	mapStartToBlockHasNoLeftOvers(boardElementID,x,y);
+	return false;
 
-
-	var foo = x+"-"+y;
-	if(activeOpenBlockArray[boardElementID].indexOf(foo) != -1){
-		if(!onlyOneOpenBlockRemains(boardElementID)){
-			return true;
-		}
+	if(mapStartToBlockHasNoLeftOvers(boardElementID,x,y)){
+		return true;
 	}
+
+	// var foo = x+"-"+y;
+	// if(activeOpenBlockArray[boardElementID].indexOf(foo) != -1){
+	// 	if(!onlyOneOpenBlockRemains(boardElementID)){
+	// 		return true;
+	// 	}
+	// }
 	return false;
 }
 
 
 
+// ============================================================================================
+// == thinkTankBrainFood End
+// ============================================================================================
+// == thinkTank Start
+// ============================================================================================
 
 function thinkTank(){
-	// console.log("thinkTank thinkTank think think think");
 	for (var i = 0; i < activeBoards.length; i++) {
-		var thisBoard = activeBoards[i],
-				x = $('#'+thisBoard+" .active").attr('x'),
-				x = parseInt(x),
-				y = $('#'+thisBoard+" .active").attr('y'),
-				y = parseInt(y);
 
 
-		var results = viewBlockMoveOptions(thisBoard,x,y);
-		// console.log(thisBoard);
+		var boardElementID = activeBoards[i],
+				x = parseInt($('#'+boardElementID+" .active").attr('x')),
+				y = parseInt($('#'+boardElementID+" .active").attr('y'));
+
+
+		var results = viewBlockMoveOptions(boardElementID,x,y);
+		// console.log(boardElementID);
 		// console.log(results);
 		
 		var bestMove = "none";
@@ -432,9 +553,10 @@ function thinkTank(){
 			}else if(results['right']['ranIntoStartBlock']){	bestMove = "right";
 			}else if(results['left']['ranIntoStartBlock']){	bestMove = "left";
 			}else{
-				console.log('thinkTank():'+thisBoard+': has no where to move, finished');
-				boardFinished(thisBoard);
-				i--;continue;
+				console.log('thinkTank():'+boardElementID+': has no where to move, finished');
+				boardFinished(boardElementID);
+				// i--;
+				continue;
 			}
 		}else if(results['left']['moveableAmount'] == 0 && 
 			results['down']['moveableAmount'] == 0 && 
@@ -457,109 +579,115 @@ function thinkTank(){
 
 
 		if(bestMove == "none"){//bypass dis shiz for speedz
-			n = 1;
-			while(n <= 4){
-				if(n == 1){
-					var pos = "up";
-				}else if(n == 2){
-					var pos = "down";
-				}else if(n == 3){
-					var pos = "right";
-				}else if(n == 4){
-					var pos = "left";
-				}else{n++;break;}
-				if(results[pos]['moveableAmount'] == 0){
-					n++;continue;
-				}
-				if(bestMove == "none" || results[pos]['moveableAmount'] < results[bestMove]['moveableAmount']){
-					// console.log("changing bestMove from "+bestMove+" to "+pos);
-					// previousBest = bestMove;
-					bestMove = pos;
-				}
-				n++;
-			}
+			bestMove = closestMove(results);
+			
 
+			var active_x = parseInt($("#"+boardElementID+" .active").attr('x')),
+					active_y = parseInt($("#"+boardElementID+" .active").attr('y'));
 
+			var percentage = percentageOfTheBoardTraversed(boardElementID);
 
-			if(isThisBlockNaked(thisBoard,bestMove)){
-				console.log("Naked lass: "+thisBoard);
-				//look for other blocks that are naked, if any other block isn't naked pick it
-				var options = [];
-				for (var k = 1; k <= 4; k++) {
-					if(k == 1){
-						var option = "up";
-					}else if(k == 2){
-						var option = "down";
-					}else if(k == 3){
-						var option = "right";
-					}else{
-						var option = "left";
-					}
-					if(results[option]['moveableAmount'] != 0 && !isThisBlockNaked(thisBoard,option)){
-						options.push(option);
-					}
-				};
-				if(options.length == 1){
-					bestMove = options[0];
-				}else if(options.length >= 1){
-					//pick the best nonnaked block
-					console.log("Rare to come here: "+thisBoard);
-				}
-				//else everybodies naked! move on
-			}
+			// if(isThisMoveOpenOnBothSides(boardElementID,bestMove,active_x,active_y) && percentage >= .20){
+			// 	// console.log("open on both sides");
+			// 	//look for other blocks that are naked, if any other block isn't naked pick it
+			// 	var options = [];
+			// 	for (var k = 1; k <= 4; k++) {
+			// 		if(k == 1 && bestMove != "up"){
+			// 			var option = "up";
+			// 		}else if(k == 2 && bestMove != "down"){
+			// 			var option = "down";
+			// 		}else if(k == 3 && bestMove != "right"){
+			// 			var option = "right";
+			// 		}else if(k == 4 && bestMove != "left"){
+			// 			var option = "left";
+			// 		}else{
+			// 			continue;
+			// 		}
+			// 		if(results[option]['moveableAmount'] != 0 && !isThisMoveOpenOnBothSides(boardElementID,option)){
+			// 			options.push(option);
+			// 		}
+			// 	};
+			// 	if(options.length == 1){
+			// 		// console.log("changing bestMove to a closer item");
+			// 		bestMove = options[0];
+			// 	}else if(options.length == 2){
 
-			if(willThisMoveBlockStarter(thisBoard,bestMove)){
-				if(bestMove == "up" || bestMove == "down"){
-					var otherDirection1 = "right",
-							otherDirection2 = "left";
+			// 		if(results[options[0]]['moveableAmount'] < results[options[1]]['moveableAmount']){
+			// 			bestMove = options[0];
+			// 		}else{
+			// 			bestMove = options[1];
+			// 		}
+			// 		// console.log("rare:2 better options:pick the shorter option");
+			// 		// console.log("chosen option: "+bestMove);
+			// 	}else if(options.length == 2){
+			// 		// console.log("all options are open, do nothing");
+			// 	}
+			// 	//else everybodies naked! move on
+			// }
+
+			if(willThisMoveBlockStarter(boardElementID,bestMove)){
+				console.log("this move will block starter:"+bestMove);
+
+				var oppDirArray = getOppositeDirections(bestMove);
+
+				if(results[oppDirArray['opp']]['moveableAmount'] != 0){
+					bestMove = oppDirArray['opp'];
+					console.log("flipped:"+bestMove);
 				}else{
-					var otherDirection1 = "up",
-							otherDirection2 = "down";
-				}
-				switch(bestMove){
-					case "up":var opposite = "down";break;
-					case "down":var opposite = "up";break;
-					case "right":var opposite = "left";break;
-					case "left":var opposite = "right";break;
-					default:console.log("Move not recognized");return;;
-				}
-
-				if(results[opposite]['moveableAmount'] != 0){
-					bestMove = opposite;
-				}else{
-					if(results[otherDirection1]['moveableAmount'] != 0 && results[otherDirection2]['moveableAmount'] != 0){
-						if(results[otherDirection1]['moveableAmount'] < results[otherDirection2]['moveableAmount']){
-							bestMove = otherDirection1;
+					if(results[oppDirArray['od1']]['moveableAmount'] != 0 && results[oppDirArray['od2']]['moveableAmount'] != 0){
+						if(results[oppDirArray['od1']]['moveableAmount'] < results[oppDirArray['od2']]['moveableAmount']){
+							bestMove = oppDirArray['od1'];
+							console.log("bestMove1:"+bestMove);
 						}else{
-							bestMove = otherDirection2;
+							bestMove = oppDirArray['od2'];
+							console.log("bestMove2:"+bestMove);
 						}
-					}else if(results[otherDirection1]['moveableAmount'] == 0){
-						bestMove = otherDirection2;
-					}else if(results[otherDirection2]['moveableAmount'] == 0){
-						bestMove = otherDirection1;
+					}else if(results[oppDirArray['od1']]['moveableAmount'] == 0){
+						bestMove = oppDirArray['od2'];
+						console.log("bestMove3:"+bestMove);
+					}else if(results[oppDirArray['od2']]['moveableAmount'] == 0){
+						bestMove = oppDirArray['od1'];
+						console.log("bestMove4:"+bestMove);
 					}
 				}
 			}
+
 		}
 		
 		
 
-
-		moveToNext(thisBoard,bestMove);
-
-
+		moveToNext(boardElementID,bestMove);
 	};
-	// console.log("thinkTank done work");
+	spliceFinishedBoards();
 }
 
 
 
 
 // ============================================================================================
-// == The Brains End
+// == thinkThank End
 // ============================================================================================
 // == Operators and inits Start
 // ============================================================================================
+
+
+
+thinkTankLoop_timer = 0;
+function thinkTankLoop(){
+	if(thinkTankLoop_timer == 0){
+		console.log("thinkTank thinkTank think think think");
+		thinkTankLoop_timer = 1;
+		thinkTankLoop_timer = setInterval(function(){ 
+			thinkTank();
+		}, 200);
+	}else{
+		console.log("thinkTank tired");
+		clearInterval(thinkTankLoop_timer);
+		thinkTankLoop_timer = 0;
+	}
+}
+
+
 
 
 
@@ -569,19 +697,22 @@ activeBoards = [];
 
 var height = 8,
 		width = 8;
-// createBoard("fixed1",height,width,2,3);// is fixable by forced movement
-// createBoard("fixed2",height,width,6,8);// is fixable by a straight line
-// createBoard("fixed3",height,width,5,8);
-// createBoard("fixed4",height,width,4,4);
 
-createBoard("alpha",height,width);
-// createBoard("beta",height,width);
-// createBoard("charlie",height,width);
-// createBoard("delta",height,width);
-// createBoard("echo",height,width);
-// createBoard("foxtrot",height,width);
-// createBoard("zeta",height,width);
-// createBoard("omega",height,width);
+
+// createBoard("alpha",height,width,4,8);//broken
+// createBoard("beta",height,width,4,1);//broken
+// createBoard("charlie",height,width,5,8);//broken
+// createBoard("delta",height,width,5,1);//broken
+
+// createBoard("echo",height,width,3,2);//broken
+// createBoard("foxtrot",height,width,6,2);//broken
+// createBoard("omega",height,width,3,7);//broken
+// createBoard("zeta",height,width,6,7);//broken
+
+for (var i = 0; i < 1; i++) {
+	var foo = "place"+i;
+	createBoard(foo,height,width);
+};
 
 
 $('.board').on("click",function(){
@@ -604,6 +735,10 @@ $('body').on("keyup",function(e){
 		case 32://space
 			var direction = "space";
 			break;
+		case 93://command
+			var direction = "command",
+					selected = $('.selected').attr("id");
+			break;
 		case 39://right
 			var direction = "right",
 					selected = $('.selected').attr("id");
@@ -625,8 +760,12 @@ $('body').on("keyup",function(e){
 			break;
 	}
 	// console.log(direction);
-	if(direction == "space"){
+	if(direction == "command"){
 		thinkTank();
+		return;
+	}
+	if(direction == "space"){
+		thinkTankLoop();
 		return;
 	}
 	if($('.selected').length){
