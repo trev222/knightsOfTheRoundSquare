@@ -453,7 +453,7 @@ for (var i = 0; i < 1; i++) {
 };
 
 
-$('.board').on("click",function(){
+$(document).on("click",'.board',function(){
 	if($(this).hasClass("selected")){
 		$('.board').removeClass("selected");
 		return;
