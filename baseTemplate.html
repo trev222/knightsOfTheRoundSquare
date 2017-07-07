@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<head>
+	<title>Knights of the round square</title>
+
+	<script type="text/javascript" src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+</head>
+
+
+
+<style type="text/css">
+	*{
+		margin: 0px;padding: 0px;
+		-moz-box-sizing: border-box;
+		-webkit-box-sizing: border-box;
+		box-sizing: border-box;
+	}
+	.board{
+		float: left;
+		padding: 5px;
+	}
+	.board.success{
+		background-color: rgba(0,255,0,.2);
+	}
+	.board.failed{
+		background-color: rgba(255,0,0,.2);
+	}
+	.board.selected{
+		background-color: rgba(255,255,0,.2);
+	}
+	.board.selected.success{
+		box-shadow: inset 0px 0px 3px 5px rgba(0,255,0,.5);
+	}
+	.board.selected.failed{
+		box-shadow: inset 0px 0px 3px 5px rgba(255,0,0,.5);
+	}
+
+	.box{
+		margin: 3px;
+		height: 20px; width: 20px;
+		border: 1px solid black;
+		float: left;
+	}
+	.box.on{
+		background-color: blue;
+	}
+	.box.beenHereAlready{
+		background-color: red;
+	}
+	.box.start{
+		background-color: green;
+	}
+	.box.traversedBlock{
+		background-color: rgba(255,0,255,.4);
+	}
+	.box.active{
+		border: 4px solid orange;
+	}
+	#playButton,#new{
+		margin: 10px;
+		width: 100%;
+		max-width: 200px;
+		height: 40px;
+	}
+</style>
+
+
+
+<body>
+	<button id="new">new</button>
+	<button id="playButton">start/stop</button>
+	
+
+</body>
+
+
+
+<script type="text/javascript">
+
+// ============================================================================================
+// == General Start
+// ============================================================================================
+boardsToSplice = [];
+
+function boardFinished(boardElementID){
+	if(!$("#"+boardElementID+" .off:not(.start)").length && 
+		!$("#"+boardElementID+" .beenHereAlready:not(.start)").length){
+		console.log("Success! "+boardElementID+" has been completed!");
+		$("#"+boardElementID).addClass("success");
+	}else{
+		console.log("Failed! "+boardElementID+" was not completed!");
+		$("#"+boardElementID).addClass("failed");
+	}
+
+	//remove from progress array
+	var index = activeBoards.indexOf(boardElementID);
+	if (index > -1) {
+		boardsToSplice.push(boardElementID);
+	}
+}
+function spliceFinishedBoards(){
+	for (var i = 0; i < boardsToSplice.length; i++) {
+		var board = boardsToSplice[i];
+
+		var index = activeBoards.indexOf(board);
+		if (index > -1) {
+	    activeBoards.splice(index, 1);
+		}
+	};
+}
+
+
+function createBoard(boardElementID,height,width,startX,startY){
+	activeBoards[activeBoards.length] = boardElementID;
+
+	$('body').append('<div class="board" size="'+width+'x'+height+'" id="'+boardElementID+'"></div>');
+	var w = 1,
+			h = 1;
+	while(h <= height){//height		
+		w = 1;
+		while(w <= width){//width
+			$('#'+boardElementID).append('<div id="'+boardElementID+'-'+w+'-'+h+'" class="box off" x="'+w+'" y="'+h+'"></div>');
+			w++;
+		}
+		$('#'+boardElementID).append('<div style="clear:both;"></div>');
+		h++;
+	}
+	chooseStart(boardElementID,height,width,startX,startY);
+}
+
+function chooseStart(boardElementID,height,width,x,y){
+	if(x == undefined){
+		var x = parseInt(Math.floor((Math.random() * width) + 1));
+	}
+	if(y == undefined){
+		var y = parseInt(Math.floor((Math.random() * height) + 1));
+	}
+	$('#'+boardElementID+'-'+x+'-'+y).addClass("start active on").removeClass("off");
+}
+
+
+
+
+
+function moveToNext(boardElementID,direction,userTouched){
+	if(userTouched == 1){
+		if(!$('#'+boardElementID).hasClass("userTouched")){
+			$('#'+boardElementID).addClass("userTouched");
+		}
+	}
+	var x = $('#'+boardElementID+' .active').attr('x'),
+			y = $('#'+boardElementID+' .active').attr('y');
+
+	switch(direction){
+		case "up": y--;break;
+		case "down": y++;break;
+		case "right": x++;break;
+		case "left": x--;break;
+		default:console.log("moveToNext(): direction not recognized: "+direction);break;
+	}
+	var removeFromActiveArray = x+"-"+y,
+			removeFromActiveArrayIndex = activeOpenBlockArray[boardElementID].indexOf(removeFromActiveArray);
+	if(removeFromActiveArrayIndex != -1){
+		activeOpenBlockArray[boardElementID].splice(removeFromActiveArrayIndex,1);
+	}
+
+
+
+	moveToThisElement = '#'+boardElementID+'-'+x+'-'+y;
+	if(!$(moveToThisElement).length){
+		console.log("moveToNext(): asked to move to this element but it doesn't exist: "+moveToThisElement);
+		boardFinished(boardElementID);
+		return;
+	}
+	if($(moveToThisElement).hasClass("on")){
+		$(moveToThisElement).addClass("beenHereAlready");
+		boardFinished(boardElementID);
+	}
+	if($(moveToThisElement).hasClass("start")){
+		boardFinished(boardElementID);
+	}
+
+	$('#'+boardElementID+' .active').removeClass("active");
+	$(moveToThisElement).addClass("active on").removeClass("off");
+}
+
+
+
+function doesBlockExist(boardElementID,x,y){
+	if($("#"+boardElementID+"-"+x+"-"+y).length){
+		return true;
+	}
+	return false;
+}
+
+
+
+function blockHasClass(className,boardElementID,x,y){
+	if($("#"+boardElementID+"-"+x+"-"+y).hasClass(className)){
+		return true;
+	}
+	return false;
+}
+
+function blockIsOpenAndExists(boardElementID,x,y,debug){
+	if(doesBlockExist(boardElementID,x,y) && blockHasClass("off",boardElementID,x,y)){
+		if(debug != undefined){
+			console.log("Block x:"+x+" y:"+y+" exists and is open");
+		}
+		return true;
+	}
+	if(debug != undefined){
+		console.log("Block x:"+x+" y:"+y+" does not exist and/or is not open");
+	}
+	return false;
+}
+
+function isNextToActiveBlock(boardElementID,x,y){
+	for (var i = 1; i <= 4; i++) {
+		if(i == 1){
+			var dir = "up";
+		}else if(i == 2){
+			var dir = "down";
+		}else if(i == 3){
+			var dir = "right";
+		}else if(i == 4){
+			var dir = "left";
+		}else{
+			continue;
+		} 
+		var cords = moveCordsOneBlock(dir,x,y),
+				cord_x = parseInt(cords['x']),
+				cord_y = parseInt(cords['y']);
+		if(doesBlockExist(boardElementID,cord_x,cord_y) && blockHasClass("active",boardElementID,cord_x,cord_y)){
+			return  true;
+		}
+	};
+	return false;
+}
+
+
+
+
+function viewBlockMoveOptions(boardElementID,x,y){
+
+
+	var data = [];
+	data["legitMoves"] = []; 
+	for (var i = 0; i < 4; i++) {
+		switch (i){
+			case 0://up
+				var pos = "up", cord = y,
+						cordIncrementor = -1;
+				break;
+			case 1://down
+				var pos = "down", cord = y,
+						cordIncrementor = 1;
+				break;	
+			case 2://right
+				var pos = "right"; cord = x,
+						cordIncrementor = 1;
+				break;
+			case 3://left
+				var pos = "left"; cord = x,
+						cordIncrementor = -1;
+				break;
+			default:
+				break;
+		}
+
+		data[pos] = []; 
+		data[pos]['moveableAmount'] = 0;
+		data[pos]['ranIntoStartBlock'] = false;
+		var checkPos = cord+cordIncrementor;
+		
+		n = 0; 
+		max = maxMoveRange(boardElementID);
+		while(n <= max){
+			if(i == 0 || i == 1){//up or down
+				if(!blockIsOpenAndExists(boardElementID,x,checkPos) && 
+					!blockHasClass("traversedBlock",boardElementID,x,checkPos))
+				{
+
+					if(blockHasClass("start",boardElementID,x,checkPos)){
+						data[pos]['ranIntoStartBlock'] = true;
+					}
+					
+					break;
+				}
+			}else{//right or left
+				if(!blockIsOpenAndExists(boardElementID,checkPos,y) &&
+					!blockHasClass("traversedBlock",boardElementID,checkPos,x))
+				{
+
+					if(blockHasClass("start",boardElementID,checkPos,y)){
+						data[pos]['ranIntoStartBlock'] = true;
+					}
+					
+					break;
+				}
+			}			
+			data[pos]['moveableAmount']++;
+			checkPos += cordIncrementor;
+			n++;
+		}	
+		if(data[pos]['moveableAmount'] >= 1){
+			data["legitMoves"].push(pos);
+		}
+	};
+	return data;
+}
+
+function moveCordsOneBlock(dir,x,y){
+	if(dir == "up"){
+		y--;
+	}else if(dir == "down"){
+		y++;
+	}else if(dir == "right"){
+		x++;
+	}else if(dir == "left"){
+		x--;
+	}else{
+		console.log("moveCordsDirection() direction not recognized: "+dir);
+	}
+	return {"x":x,"y":y};
+}
+
+function getOppositeDirections(dir){
+	if(dir == "up"){
+		var opp = "down",od1 = "right",od2 = "left";
+	}else if(dir == "down"){
+		var opp = "up",od1 = "right",od2 = "left";
+	}else if(dir == "right"){
+		var opp = "left", od1 = "up", od2 = "down";
+	}else if(dir == "left"){
+		var opp = "right", od1 = "up", od2 = "down";
+	}else{
+		console.log("getOppositeDirections() direction not recognized: "+dir); return	false;
+	}
+	return {"opp":opp,"od1":od1,"od2":od2};
+}
+
+function boardTotalBlocks(boardElementID){
+	var size = $('#'+boardElementID).attr('size'),
+			sizeArray = size.split("x"),
+			widthBlocks = parseInt(sizeArray[0]),
+			heightBlocks = parseInt(sizeArray[1]),
+			totalBlocks = widthBlocks*heightBlocks;
+	return totalBlocks;
+}
+
+function maxMoveRange(boardElementID){
+	var size = $('#'+boardElementID).attr('size'),
+			sizeArray = size.split("x"),
+			widthBlocks = parseInt(sizeArray[0]),
+			heightBlocks = parseInt(sizeArray[1]);
+	if(widthBlocks > heightBlocks){
+		return widthBlocks;
+	}else{
+		return heightBlocks;
+	}
+}
+
+function percentageOfTheBoardTraversed(boardElementID){
+	var totalBlocks = boardTotalBlocks(boardElementID),
+			onBlocks = $('#'+boardElementID+" .on").length,
+			percentage = onBlocks/totalBlocks;
+	return percentage;
+}
+
+// ============================================================================================
+// == General End
+// ============================================================================================
+// == thinkTankBrainFood Start
+// ============================================================================================
+
+
+
+
+
+
+// ============================================================================================
+// == thinkTankBrainFood End
+// ============================================================================================
+// == thinkTank Start
+// ============================================================================================
+
+function thinkTank(){
+	if(activeBoards.length == 0){
+		clearInterval(thinkTankLoop_timer);
+		thinkTankLoop_timer = 0;
+		return;
+	}
+
+	for (var i = 0; i < activeBoards.length; i++) {
+
+
+		var boardElementID = activeBoards[i],
+				x = parseInt($('#'+boardElementID+" .active").attr('x')),
+				y = parseInt($('#'+boardElementID+" .active").attr('y'));
+
+
+		
+	};
+}
+
+
+
+
+// ============================================================================================
+// == thinkThank End
+// ============================================================================================
+// == Operators and inits Start
+// ============================================================================================
+
+
+
+thinkTankLoop_timer = 0;
+function thinkTankLoop(){
+	if(thinkTankLoop_timer == 0){
+		console.log("thinkTank thinkTank think think think");
+		thinkTankLoop_timer = 1;
+		thinkTankLoop_timer = setInterval(function(){ 
+			thinkTank();
+		}, 200);
+	}else{
+		console.log("thinkTank tired");
+		clearInterval(thinkTankLoop_timer);
+		thinkTankLoop_timer = 0;
+	}
+}
+
+
+
+
+
+
+
+activeBoards = [];
+
+var height = 8,
+		width = 8;
+
+
+// createBoard("alpha",height,width,5,3);//broken
+// createBoard("alpha2",height,width,1,2);//broken
+// createBoard("alpha",height,width,4,6);//broken
+// createBoard("alpha",height,width,8,8);//crashes
+
+
+for (var i = 0; i < 1; i++) {
+	var foo = "place"+i;
+	createBoard(foo,height,width);
+};
+
+
+$('.board').on("click",function(){
+	if($(this).hasClass("selected")){
+		$('.board').removeClass("selected");
+		return;
+	}
+	$('.board').removeClass("selected");
+	$(this).addClass("selected");	
+});
+window.addEventListener("keydown", function(e) {
+    if([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) {
+        e.preventDefault();
+    }
+}, false);
+
+$('#new').on("click",function(){
+	$('.board').remove();
+	activeBoards = [];
+	createBoard(foo,height,width);
+});
+$('#playButton').on("click",function(){
+	thinkTankLoop();
+});
+
+$('body').on("keyup",function(e){
+	// console.log("received key: "+e.keyCode);
+	switch(e.keyCode){
+		case 32://space
+			var direction = "space";
+			break;
+		case 93://command
+			var direction = "command";
+			break;
+		case 39://right
+			var direction = "right",
+					selected = $('.selected').attr("id");
+			break;
+		case 37://left
+			var direction = "left",
+					selected = $('.selected').attr("id");
+			break;
+		case 38://up
+			var direction = "up",
+					selected = $('.selected').attr("id");
+			break;
+		case 40://down
+			var direction = "down",
+					selected = $('.selected').attr("id");
+			break;
+		default:
+			return;
+			break;
+	}
+	// console.log(direction);
+	if(direction == "command"){
+		thinkTank();
+		return;
+	}
+	if(direction == "space"){
+		thinkTankLoop();
+		return;
+	}
+	if($('.selected').length){
+		moveToNext(selected,direction,1);
+	}
+	
+});
+
+
+
+
+
+</script>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
