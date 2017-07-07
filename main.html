@@ -628,6 +628,8 @@ function traverseAllPathsIsPossible(boardElementID,block_x,block_y){
 // ============================================================================================
 
 function thinkTank(){
+	console.log("thinkTank");
+	console.log(activeBoards);
 	if(activeBoards.length == 0){
 		clearInterval(thinkTankLoop_timer);
 		thinkTankLoop_timer = 0;
@@ -781,6 +783,7 @@ $('#new').on("click",function(){
 	$('.board').remove();
 	activeBoards = [];
 	activeOpenBlockArray = [];
+	boardsToSplice = [];
 	createBoard(foo,height,width);
 });
 $('#playButton').on("click",function(){
