@@ -3,8 +3,6 @@
 	<title>Knights of the round square</title>
 
 	<script type="text/javascript" src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
-	<!-- // <script type="text/javascript" src="/scripts/jquery-1.10.2.js"></script> -->
-	<!-- // <script type="text/javascript" src="/scripts/1.11.0-jquery-ui.js"></script> -->
 </head>
 
 
@@ -54,29 +52,25 @@
 	.box.traversedBlock{
 		background-color: rgba(255,0,255,.4);
 	}
-
-
 	.box.active{
 		border: 4px solid orange;
+	}
+	#playButton,#new{
+		margin: 10px;
+		width: 100%;
+		max-width: 200px;
+		height: 40px;
 	}
 </style>
 
 
 
 <body>
-
+	<button id="new">new</button>
+	<button id="playButton">start/stop</button>
 	
 
 </body>
-
-
-
-
-
-
-
-
-
 
 
 
@@ -92,21 +86,16 @@ function boardFinished(boardElementID){
 	if(!$("#"+boardElementID+" .off:not(.start)").length && 
 		!$("#"+boardElementID+" .beenHereAlready:not(.start)").length){
 		console.log("Success! "+boardElementID+" has been completed!");
-		// console.log("off.length:"+$("#"+boardElementID+" .off").length+"beenHereAlready.length"+$("#"+boardElementID+" .beenHereAlready").length);
 		$("#"+boardElementID).addClass("success");
 	}else{
 		console.log("Failed! "+boardElementID+" was not completed!");
-		// console.log("off.length:"+$("#"+boardElementID+" .off").length+"beenHereAlready.length"+$("#"+boardElementID+" .beenHereAlready").length);
 		$("#"+boardElementID).addClass("failed");
 	}
-	// var foo = $("#"+boardElementID+" .off").attr('id');
-	// console.log(foo);
 
 	//remove from progress array
 	var index = activeBoards.indexOf(boardElementID);
 	if (index > -1) {
 		boardsToSplice.push(boardElementID);
-    // activeBoards.splice(index, 1);
 	}
 }
 function spliceFinishedBoards(){
@@ -151,7 +140,6 @@ function chooseStart(boardElementID,height,width,x,y){
 }
 
 function createActiveOpenBlockArray(boardElementID,x,y){
-	// console.log("Init: x:"+x+" y:"+y);
 	activeOpenBlockArray[boardElementID] = [];
 
 	var top_y = y-1;
@@ -189,10 +177,7 @@ function moveToNext(boardElementID,direction){
 	var removeFromActiveArray = x+"-"+y,
 			removeFromActiveArrayIndex = activeOpenBlockArray[boardElementID].indexOf(removeFromActiveArray);
 	if(removeFromActiveArrayIndex != -1){
-		// console.log(activeOpenBlockArray[boardElementID]);
 		activeOpenBlockArray[boardElementID].splice(removeFromActiveArrayIndex,1);
-		// console.log("spliced: "+removeFromActiveArrayIndex);
-		// console.log(activeOpenBlockArray[boardElementID]);
 	}
 
 
@@ -224,19 +209,7 @@ function doesBlockExist(boardElementID,x,y){
 	return false;
 }
 
-function isBlockOpen(boardElementID,x,y){
-	if($("#"+boardElementID+"-"+x+"-"+y).hasClass("off")){
-		return true;
-	}
-	return false;
-}
 
-function blockIsOpenAndExists(boardElementID,x,y){
-	if(doesBlockExist(boardElementID,x,y) && isBlockOpen(boardElementID,x,y)){
-		return true;
-	}
-	return false;
-}
 
 function blockHasClass(className,boardElementID,x,y){
 	if($("#"+boardElementID+"-"+x+"-"+y).hasClass(className)){
@@ -245,11 +218,39 @@ function blockHasClass(className,boardElementID,x,y){
 	return false;
 }
 
-function onlyOneOpenBlockRemains(boardElementID){
-	var count = $("#"+boardElementID+" .off").length;
-	if(count <= 1){
+function blockIsOpenAndExists(boardElementID,x,y,debug){
+	if(doesBlockExist(boardElementID,x,y) && blockHasClass("off",boardElementID,x,y)){
+		if(debug != undefined){
+			console.log("Block x:"+x+" y:"+y+" exists and is open");
+		}
 		return true;
 	}
+	if(debug != undefined){
+		console.log("Block x:"+x+" y:"+y+" does not exist and/or is not open");
+	}
+	return false;
+}
+
+function isNextToActiveBlock(boardElementID,x,y){
+	for (var i = 1; i <= 4; i++) {
+		if(i == 1){
+			var dir = "up";
+		}else if(i == 2){
+			var dir = "down";
+		}else if(i == 3){
+			var dir = "right";
+		}else if(i == 4){
+			var dir = "left";
+		}else{
+			continue;
+		} 
+		var cords = moveCordsOneBlock(dir,x,y),
+				cord_x = parseInt(cords['x']),
+				cord_y = parseInt(cords['y']);
+		if(doesBlockExist(boardElementID,cord_x,cord_y) && blockHasClass("active",boardElementID,cord_x,cord_y)){
+			return  true;
+		}
+	};
 	return false;
 }
 
@@ -261,6 +262,7 @@ function viewBlockMoveOptions(boardElementID,x,y){
 	// console.log("viewBlockMoveOptions x:"+x+" y:"+y);
 
 	var data = [];
+	data["legitMoves"] = []; 
 	for (var i = 0; i < 4; i++) {
 		switch (i){
 			case 0://up
@@ -292,12 +294,10 @@ function viewBlockMoveOptions(boardElementID,x,y){
 		max = maxMoveRange(boardElementID);
 		while(n <= max){
 			if(i == 0 || i == 1){//up or down
-				// console.log("pos: "+pos+" x:"+x+" checkPos(y): "+checkPos);
 				if(!blockIsOpenAndExists(boardElementID,x,checkPos) && 
 					!blockHasClass("traversedBlock",boardElementID,x,checkPos))
 				{
 
-					// console.log("Breaking pos: "+pos+" x:"+x+" checkPos(y): "+checkPos);
 					if(blockHasClass("start",boardElementID,x,checkPos)){
 						data[pos]['ranIntoStartBlock'] = true;
 					}
@@ -305,12 +305,10 @@ function viewBlockMoveOptions(boardElementID,x,y){
 					break;
 				}
 			}else{//right or left
-				// console.log("pos: "+pos+" y:"+y+" checkPos(x): "+checkPos);
 				if(!blockIsOpenAndExists(boardElementID,checkPos,y) &&
 					!blockHasClass("traversedBlock",boardElementID,checkPos,x))
 				{
 
-					// console.log("Breaking pos: "+pos+" checkPos(x): "+checkPos+" y:"+y);
 					if(blockHasClass("start",boardElementID,checkPos,y)){
 						data[pos]['ranIntoStartBlock'] = true;
 					}
@@ -327,10 +325,12 @@ function viewBlockMoveOptions(boardElementID,x,y){
 			}
 			n++;
 		}	
+		if(data[pos]['moveableAmount'] >= 1){
+			data["legitMoves"].push(pos);
+		}
 	};
 	return data;
 }
-// console.log(viewBlockMoveOptions(boardElementID,x,y));
 
 function moveCordsOneBlock(dir,x,y){
 	if(dir == "up"){
@@ -400,40 +400,37 @@ function percentageOfTheBoardTraversed(boardElementID){
 // == thinkTankBrainFood Start
 // ============================================================================================
 
-function closestMove(movesArray,badMoves){
+function closestMove(movesArray,allowedMoves){
 	bestMove = "none";
-	n = 1;
-	while(n <= 4){
-		if(n == 1){
+	for (var i = 1; i <= 4; i++) {
+		if(i == 1){
 			var pos = "up";
-		}else if(n == 2){
+		}else if(i == 2){
 			var pos = "down";
-		}else if(n == 3){
+		}else if(i == 3){
 			var pos = "right";
-		}else if(n == 4){
+		}else if(i == 4){
 			var pos = "left";
-		}else{n++;break;}
+		}else{
+			continue;
+		}
+
 		if(movesArray[pos]['moveableAmount'] == 0){
-			n++;continue;
+			continue;
 		}
-		if(badMoves != undefined){
-			var index = badMoves.indexOf(pos);
-			// console.log("closestMove(badMoves): index:"+index);
-			if(index != -1){
-				n++;continue;
-			}
+		if(allowedMoves != undefined && allowedMoves.indexOf(pos) == -1){
+			continue;
 		}
+
+
 		if(bestMove == "none" || movesArray[pos]['moveableAmount'] < movesArray[bestMove]['moveableAmount']){
-			// console.log("changing bestMove from "+bestMove+" to "+pos);
-			// previousBest = bestMove;
 			bestMove = pos;
 		}
-		n++;
-	}
+	};
 	return bestMove;
 }
 
-function isThisMoveOpenOnBothSides(boardElementID,dir,cur_x,cur_y){//Naked means, is it empty on 3 sides
+function isThisMoveOpenOnBothSides(boardElementID,dir,cur_x,cur_y){
 	
 	var nextMoveCords = moveCordsOneBlock(dir,cur_x,cur_y);
 
@@ -444,147 +441,67 @@ function isThisMoveOpenOnBothSides(boardElementID,dir,cur_x,cur_y){//Naked means
 
 	if(blockIsOpenAndExists(boardElementID,od1_cords["x"],od1_cords["y"]) &&
 		blockIsOpenAndExists(boardElementID,od2_cords["x"],od2_cords["y"])){
-		// console.log("TRUE move dir:"+dir+" cur_x:"+cur_x+" cur_y:"+cur_y);
 		return true;
 	}
 	return false;
 }
 
-// sometimes there's a block with an entrance
-// but no exit while mapping
-// fill this for now
-// function fillHoles(boardElementID){
-// 	console.log("fillHoles called");
-// 	$("#"+boardElementID+" .off").each(function(){
-// 		var x = parseInt($(this).attr("x")),
-// 				y = parseInt($(this).attr("y"));
-// 		var options = viewBlockMoveOptions(boardElementID,x,y);
-// 		console.log();
 
-// 		var n = 0;
-// 		for (var i = 1; i <= 4; i++) {
-// 			if(i == 1){ 
-// 				var pos = "up";
-// 			}else if(i == 2){
-// 				var pos = "down";
-// 			}else if(i == 3){
-// 				var pos = "right";
-// 			}else if(i == 4){
-// 				var pos = "left";
-// 			}else{
-// 				continue;
-// 			}
-// 			if(options[pos]['moveableAmount'] == 0 && options[pos]['ranIntoStartBlock'] == false){
-// 				n++;
-// 			} 
-// 		};
-// 		if(n == 3){ //this block only has one entrance/exit, block it off for now
-// 			// $(this).addClass("fillHole");
-// 			console.log("fillHole options: x:"+x+"y:"+y);
-// 			console.log(options);
-// 			$(this).removeClass("off").addClass("map fillHole");
-// 			// return false;
-// 		}else if(n == 4){
-// 			console.log("mkay fillHole->n is 4, that's a bug");
-// 		}
-// 	});
-// 	console.log("fillHoles Finished")
-// }
+function startBlockIsTouchingATraverseBlockButNotThisBlock(boardElementID,x,y){
+	var start_x = parseInt($("#"+boardElementID+" .start").attr("x")),
+			start_y = parseInt($("#"+boardElementID+" .start").attr("y"));
 
-// them english skills payin off arent they
-// function mapStartToBlockLeftOvers(boardElementID,x,y){
-// 	// console.log("mapFromStartToThisBlock called: x:"+x+" y:"+y);
-// 	var totalOffBlocks = $("#"+boardElementID+" .off").length;
-// 	var map = [];
-// 	map.push(x+"-"+y);
-// 	$("#"+boardElementID+"-"+x+"-"+y).addClass("map").removeClass("off");
-
-// 	var openBlockStartPosCords = activeOpenBlockArray[boardElementID][0],
-// 			openBlockStartPosCordsSplit = openBlockStartPosCords.split("-"),
-// 			openBlockStart_x = parseInt(openBlockStartPosCordsSplit[0]),
-// 			openBlockStart_y = parseInt(openBlockStartPosCordsSplit[1]);
-
-// 	// fillHoles(boardElementID);
-
-// 	map.push(openBlockStart_x+"-"+openBlockStart_y);
-// 	$("#"+boardElementID+"-"+openBlockStart_x+"-"+openBlockStart_y).addClass("map").removeClass("off");
-
-
-// 	var	current_x = openBlockStart_x,
-// 			current_y = openBlockStart_y,
-// 			n = 0,
-// 			totalBlocks = boardTotalBlocks(boardElementID);
-// 	while(n <= totalBlocks){
-// 		// console.log("while loop looking at x:"+current_x+" y:"+current_y+" n:"+n);
-// 		var options = viewBlockMoveOptions(boardElementID,current_x,current_y);
-// 				// console.log("options:");
-// 				// console.log(options);
-// 				if(options["up"]['moveableAmount'] == 0 && options["down"]['moveableAmount'] == 0 &&
-// 					 options["right"]['moveableAmount'] == 0 && options["left"]['moveableAmount'] == 0
-// 				){//if all options are 0 break;
-// 					// console.log("breaking...all options are 0");
-// 					break;
-// 				}
-// 		var bestMove = closestMove(options);
-// 				// console.log("bestMove:"+bestMove);
+	for (var i = 1; i < 4; i++) {
+		if(i == 1){
+			var dir = "up";
+		}else if(i == 2){
+			var dir = "down";
+		}else if(i == 3){
+			var dir = "right";
+		}else if(i == 4){
+			var dir = "left";
+		}else{
+			continue;
+		}
+		var cords = moveCordsOneBlock(dir,start_x,start_y),
+				cord_x = parseInt(cords['x']),
+				cord_y = parseInt(cords['y']);
 		
-// 		var moveResults = moveCordsOneBlock(bestMove,current_x,current_y);
-// 				// console.log("moveResults:");
-// 				// console.log(moveResults);
+		if(doesBlockExist(boardElementID,cord_x,cord_y) && 
+			blockHasClass("traversedBlock",boardElementID,cord_x,cord_y) && 
+			(cord_x == x && cord_y == y) )
+		{
+			return true;
+		}
+	}
+	return false;
+}
 
-// 		current_x = parseInt(moveResults['x']),
-// 		current_y	= parseInt(moveResults['y']);
-// 		// $('#'+boardElementID+" .mapActive").removeClass("mapActive").addClass("mapWasActive");
-// 		// $('#'+boardElementID+"-"+current_x+"-"+current_y).addClass("mapActive");
+function traverseAllPathsIsPossible(boardElementID,block_x,block_y){
 
-// 		var indexMe = current_x+"-"+current_y,
-// 				index = map.indexOf(indexMe);
-// 		if(map.indexOf(indexMe) == -1){
-// 			map.push(indexMe);
-// 			$("#"+boardElementID+"-"+current_x+"-"+current_y).addClass("map").removeClass("off");
-// 			// console.log("Just gave x:"+current_x+" y:"+current_y+" mapNo:"+n);
-// 		}else{
-// 			// console.log("mapStartToBlockHasLeftOvers() asked to index something that's already here: newIndex:"+indexMe);
-// 			// console.log(map);
-// 			return false;
-// 		}
+	var isPossible = false,
+			openOn = "null";
 
-		
-// 		n++;
-// 	}
-// 	$('#'+boardElementID+" .map").addClass("off").removeClass("map");
-
-// 	var foo = map.length/totalOffBlocks;
-// 	if(foo <= 0.49){
-// 		console.log("True:LeftOvers: totalOffBlocks:"+totalOffBlocks+" map.length:"+map.length);
-// 		return true;
-// 	}
-// 	console.log("False:LeftOvers: totalOffBlocks:"+totalOffBlocks+" map.length:"+map.length);
-// 	return false;
-
-// }
-
-
-
-function canTraverseThroughRestOfBoardWithoutThisBlock(boardElementID,block_x,block_y){
-	// console.log("canTraverseThroughRestOfBoardWithoutThisBlock");
+	if(activeOpenBlockArray[boardElementID].length >= 2){
+		isPossible = true;
+		return {"boolean":isPossible,"openOn":openOn};
+	}
+	
 	if(!activeOpenBlockArray[boardElementID][0]){
 		boardFinished(boardElementID);
-		return false;
+		return {"boolean":isPossible,"openOn":openOn};
 	}	
-	
+	activeOpenBlockArray[boardElementID][0];
+
+
 	var openBlockStartPosCords = activeOpenBlockArray[boardElementID][0],
 			openBlockStartPosCordsSplit = openBlockStartPosCords.split("-"),
 			x = parseInt(openBlockStartPosCordsSplit[0]),
 			y = parseInt(openBlockStartPosCordsSplit[1]);
 
-	// var x = 4,
-	// y = 1,
-	// block_x = 4,
-	// block_y = 7;
-
 	if(block_x == x && block_y == y){
-		return false;
+		openOn = "opposite";
+		return {"boolean":isPossible,"openOn":openOn};
 	}
 	var totalOffBlocks = $("#"+boardElementID+" .off").length;
 	$("#"+boardElementID+"-"+block_x+"-"+block_y).addClass("traversedBlock");
@@ -595,17 +512,15 @@ function canTraverseThroughRestOfBoardWithoutThisBlock(boardElementID,block_x,bl
 	while(traverseBlocks.length >= 1){
 		x = traverseBlocks[0]['x'],
 		y = traverseBlocks[0]['y'];
-		// console.log("loop x:"+x+" y:"+y);
 		var moveOptions = viewBlockMoveOptions(boardElementID,x,y);
-		// console.log(moveOptions);
-		for (var i = 1; i <= 4; i++) {
-			if(i == 1){
+		for (var m = 1; m <= 4; m++) {
+			if(m == 1){
 				var dir = "up";
-			}else if(i == 2){
+			}else if(m == 2){
 				var dir = "down";
-			}else if(i == 3){
+			}else if(m == 3){
 				var dir = "right";
-			}else if(i == 4){
+			}else if(m == 4){
 				var dir = "left";
 			}else{
 				continue;
@@ -614,10 +529,8 @@ function canTraverseThroughRestOfBoardWithoutThisBlock(boardElementID,block_x,bl
 				var newCords = moveCordsOneBlock(dir,x,y),
 						new_x = newCords["x"],
 						new_y = newCords["y"];
-				// console.log("hello:"+moveOptions[dir]['moveableAmount']);
 
 				if(!blockHasClass("traversedBlock",boardElementID,new_x,new_y) && !blockHasClass("on",boardElementID,new_x,new_y)){
-					// console.log("pushing new cords: x:"+new_x+" y:"+new_y);
 					$("#"+boardElementID+"-"+new_x+"-"+new_y).addClass("traversedBlock");
 					traverseBlocks.push(newCords);
 				}
@@ -629,50 +542,91 @@ function canTraverseThroughRestOfBoardWithoutThisBlock(boardElementID,block_x,bl
 	}
 	var totalTraversedBlocks = $("#"+boardElementID+" .traversedBlock").length;
 
-	console.log("canTraverseThroughRestOfBoardWithoutThisBlock finished");
-	console.log("totalOffBlocks: "+totalOffBlocks+" totalTraversedBlocks:"+totalTraversedBlocks);
-	$("#"+boardElementID+" .traversedBlock").removeClass("traversedBlock");
-	if(totalOffBlocks == totalTraversedBlocks){
-		console.log("canTraverseThroughRestOfBoardWithoutThisBlock: true");
-		return true;
-	}
-	console.log("canTraverseThroughRestOfBoardWithoutThisBlock: false");
-	return false;
-
-
-}
-
-
-
-
-function willThisMoveBlockStarter(boardElementID,move){
-	// console.log(activeOpenBlockArray[boardElementID]);
-	if(activeOpenBlockArray[boardElementID].length > 1){
-		return false;
-	}
-
-
-	var x =	parseInt($("#"+boardElementID+" .active").attr('x')),
-			y = parseInt($("#"+boardElementID+" .active").attr('y'));
-	if(move == "up"){y--;
-	}else if(move == "down"){y++;
-	}else if(move == "right"){x++;
-	}else if(move == "left"){x--;
-	}else{
-		console.log("willThisMoveBlockStarter() move not recognized: "+move);return;
-	}
-
-	if(canTraverseThroughRestOfBoardWithoutThisBlock(boardElementID,x,y)){
-		return false;
-	}
-
-	// will the moves after this be traversable?
-
-	// will it leave any holes?
 	
+	if(totalOffBlocks == totalTraversedBlocks){
+		isPossible = true;
+	}else{
+		//find which side this block is open on
+		for (var n = 1; n <= 4; n++) {
+			if(n == 1){
+				var dir = "up";
+			}else if(n == 2){
+				var dir = "down";
+			}else if(n == 3){
+				var dir = "right";
+			}else if(n == 4){
+				var dir = "left";
+			}else{
+				continue;
+			} 
+			var cords = moveCordsOneBlock(dir,block_x,block_y),
+					cord_x = parseInt(cords['x']),
+					cord_y = parseInt(cords['y']);
 
-	return true;
+			if(blockIsOpenAndExists(boardElementID,cord_x,cord_y) && !blockHasClass("traversedBlock",boardElementID,cord_x,cord_y)){
+
+				// check this block to see if it has more room to run
+				// if block to right/left or top/bottom are open and right/left or 
+				// top/bottom are closed do not pick this block
+
+				//move these cords one // need to be moved to touch this block and start
+				for (var i = 1; i <= 4; i++) {
+					if(i == 1){
+						var dir2 = "up";
+					}else if(i == 2){
+						var dir2 = "down";
+					}else if(i == 3){
+						var dir2 = "right";
+					}else if(i == 4){
+						var dir2 = "left";
+					}else{
+						continue;
+					} 
+					var cords2 = moveCordsOneBlock(dir2,cord_x,cord_y),
+							cord_x2 = parseInt(cords2['x']),
+							cord_y2 = parseInt(cords2['y']);
+					if(blockIsOpenAndExists(boardElementID,cord_x2,cord_y2) && 
+						!blockHasClass("traversedBlock",boardElementID,cord_x2,cord_y2) &&
+						isNextToActiveBlock(boardElementID,cord_x2,cord_y2))
+					{	
+						break;
+					}
+				};
+				var top_y	= cord_y2-1,
+						bottom_y = cord_y2+1,
+						right_x = cord_x2+1,
+						left_x = cord_x2-1;
+				//top//bottom//right//left
+
+
+				if(blockIsOpenAndExists(boardElementID,cord_x2,top_y) && blockIsOpenAndExists(boardElementID,cord_x2,bottom_y) &&
+					!blockIsOpenAndExists(boardElementID,right_x,cord_y2) && !blockIsOpenAndExists(boardElementID,left_x,cord_y2)
+					){
+					continue;
+				}else{
+				}
+				//right//left//top//bottom
+				if(blockIsOpenAndExists(boardElementID,right_x,cord_y2) && blockIsOpenAndExists(boardElementID,left_x,cord_y2) &&
+					!blockIsOpenAndExists(boardElementID,cord_x2,top_y) && !blockIsOpenAndExists(boardElementID,cord_x2,bottom_y)
+					){
+					continue;
+				}else{
+				}
+
+				openOn = dir;
+				break;
+			}
+		};
+		
+	}
+	$("#"+boardElementID+" .traversedBlock").removeClass("traversedBlock");
+
+	
+	console.log("willThisBlockCloseOffStarter: boolean:"+isPossible+" openOn:"+openOn);
+	return {"boolean":isPossible,"openOn":openOn};
+
 }
+
 
 
 
@@ -683,7 +637,14 @@ function willThisMoveBlockStarter(boardElementID,move){
 // ============================================================================================
 
 function thinkTank(){
-	// console.log("thinkTank");
+	console.log("thinkTank");
+	console.log(activeBoards);
+	if(activeBoards.length == 0){
+		clearInterval(thinkTankLoop_timer);
+		thinkTankLoop_timer = 0;
+		return;
+	}
+
 	for (var i = 0; i < activeBoards.length; i++) {
 
 
@@ -695,328 +656,83 @@ function thinkTank(){
 
 
 		var moveOptions = viewBlockMoveOptions(boardElementID,x,y);
-		// console.log(boardElementID);
-		// console.log(results);
 		
 		var bestMove = "none";
+		if(moveOptions["legitMoves"].length == 0){
 
-		// If there's no moves or only one move, 
-		// then it's quite obvious isn't it
-		if(moveOptions['up']['moveableAmount'] == 0 &&
-			moveOptions['down']['moveableAmount'] == 0 && 
-			moveOptions['right']['moveableAmount'] == 0 &&
-			moveOptions['left']['moveableAmount'] == 0)
-		{
-			if(moveOptions['up']['ranIntoStartBlock']){
-				bestMove = "up";
-				$('#'+boardElementID+" .start").removeClass("on").addClass("off");
-			}else if(moveOptions['down']['ranIntoStartBlock']){	
-				bestMove = "down";
-				$('#'+boardElementID+" .start").removeClass("on").addClass("off");
-			}else if(moveOptions['right']['ranIntoStartBlock']){	
-				bestMove = "right";
-				$('#'+boardElementID+" .start").removeClass("on").addClass("off");
-			}else if(moveOptions['left']['ranIntoStartBlock']){	
-				bestMove = "left";
-				$('#'+boardElementID+" .start").removeClass("on").addClass("off");
-			}else{
-				console.log('thinkTank():'+boardElementID+': has no where to move, finished');
-				boardFinished(boardElementID);
-				continue;
-			}
-		}else if(moveOptions['left']['moveableAmount'] == 0 && 
-			moveOptions['down']['moveableAmount'] == 0 && 
-			moveOptions['right']['moveableAmount'] == 0){
-			var bestMove = "up";
-		}else if(moveOptions['up']['moveableAmount'] == 0 && 
-			moveOptions['left']['moveableAmount'] == 0 && 
-			moveOptions['right']['moveableAmount'] == 0){
-			var bestMove = "down";
-		}else if(moveOptions['up']['moveableAmount'] == 0 && 
-			moveOptions['left']['moveableAmount'] == 0 && 
-			moveOptions['down']['moveableAmount'] == 0){
-			var bestMove = "right";
-		}else if(moveOptions['up']['moveableAmount'] == 0 && 
-			moveOptions['down']['moveableAmount'] == 0 && 
-			moveOptions['right']['moveableAmount'] == 0){
-			var bestMove = "left";
-		}
-
-
-
-		if(bestMove == "none"){//bypass dis shiz for speedz
-			bestMove = closestMove(moveOptions);
-			
-			// var active_x = parseInt($("#"+boardElementID+" .active").attr('x')),
-			// 		active_y = parseInt($("#"+boardElementID+" .active").attr('y'));
-
-			// var percentage = percentageOfTheBoardTraversed(boardElementID);
-
-			// if(isThisMoveOpenOnBothSides(boardElementID,bestMove,active_x,active_y) && percentage >= .20){
-			// 	// console.log("open on both sides");
-			// 	//look for other blocks that are naked, if any other block isn't naked pick it
-			// 	var options = [];
-			// 	for (var k = 1; k <= 4; k++) {
-			// 		if(k == 1 && bestMove != "up"){
-			// 			var option = "up";
-			// 		}else if(k == 2 && bestMove != "down"){
-			// 			var option = "down";
-			// 		}else if(k == 3 && bestMove != "right"){
-			// 			var option = "right";
-			// 		}else if(k == 4 && bestMove != "left"){
-			// 			var option = "left";
-			// 		}else{
-			// 			continue;
-			// 		}
-			// 		if(moveOptions[option]['moveableAmount'] != 0 && !isThisMoveOpenOnBothSides(boardElementID,option)){
-			// 			options.push(option);
-			// 		}
-			// 	};
-			// 	if(options.length == 1){
-			// 		// console.log("changing bestMove to a closer item");
-			// 		bestMove = options[0];
-			// 	}else if(options.length == 2){
-
-			// 		if(moveOptions[options[0]]['moveableAmount'] < moveOptions[options[1]]['moveableAmount']){
-			// 			bestMove = options[0];
-			// 		}else{
-			// 			bestMove = options[1];
-			// 		}
-			// 		// console.log("rare:2 better options:pick the shorter option");
-			// 		// console.log("chosen option: "+bestMove);
-			// 	}else if(options.length == 2){
-			// 		// console.log("all options are open, do nothing");
-			// 	}
-			// 	//else everybodies naked! move on
-			// }
-
-
-			var x = 1,
-					badMoves = [];
-			while(willThisMoveBlockStarter(boardElementID,bestMove)){
-				console.log("Loop bestMove:"+bestMove +" loopCount"+x);
-				badMoves.push(bestMove);
-				bestMove = closestMove(moveOptions,badMoves);
-				if(x>=4){
-					console.log("while no good moves found");
+			for (var i = 1; i <= 4; i++) {
+				if(i == 1){
+					var pos = "up";
+				}else if(i == 2){
+					var pos = "down";
+				}else if(i == 3){
+					var pos = "right";
+				}else if(i == 4){
+					var pos = "left";
+				}else{
+					console.log('thinkTank():'+boardElementID+': has no where to move, finished');
 					boardFinished(boardElementID);
-					break;
+					continue;
 				}
-				x++;
+				if(moveOptions[pos]['ranIntoStartBlock']){
+					bestMove = pos;
+					$('#'+boardElementID+" .start").removeClass("on").addClass("off");
+				}
+			};
+		}else if(moveOptions["legitMoves"].length == 1){
+			bestMove = moveOptions["legitMoves"][0];
+		}
+
+
+
+		if(bestMove == "none"){
+			var bestMoveToPickFromArray = [];
+
+			var active_x = parseInt($("#"+boardElementID+" .active").attr('x')),
+					active_y = parseInt($("#"+boardElementID+" .active").attr('y'));
+
+			for (var i = 0; i < moveOptions['legitMoves'].length; i++) {
+				var pos = moveOptions['legitMoves'][i];
+
+				console.log("pos:"+pos);
+
+				var cords = moveCordsOneBlock(pos,active_x,active_y),
+						x = parseInt(cords['x']),
+						y = parseInt(cords['y']);
+
+				var result = traverseAllPathsIsPossible(boardElementID,x,y);
+				if(result['boolean'] == false){//openOn
+					console.log("boolean is false:"+result['boolean']);
+					var openOn = result['openOn'];
+					
+					if(openOn == "opposite"){
+						var opposites = getOppositeDirections(pos),
+								openOn = opposites['opp'];
+					}else if(openOn != "null"){
+						console.log("================");
+						console.log("openOn fired correctly: "+openOn);
+						console.log("================");
+					}
+
+					if(moveOptions['legitMoves'].indexOf(openOn) != -1){
+						bestMove = openOn;
+						break;
+					}
+				}else{
+					console.log("pushing pos:"+pos);
+					bestMoveToPickFromArray.push(pos);
+				}
+			};
+
+			if(bestMove == "none"){
+				console.log("bestMove == none picking closestMove");
+				console.log("bestMoveToPickFromArray");
+				console.log(bestMoveToPickFromArray);
+				bestMove = closestMove(moveOptions,bestMoveToPickFromArray);
 			}
-	
-
-			// =======================================================================
-			// == old code, keep to show progression
-			// =======================================================================
-
-			// about 95% progression
-
-			// // sometimes there's a block with an entrance
-			// // but no exit while mapping
-			// // fill this for now
-			// function fillHoles(boardElementID){
-			// 	console.log("fillHoles called");
-			// 	$("#"+boardElementID+" .off").each(function(){
-			// 		var x = parseInt($(this).attr("x")),
-			// 				y = parseInt($(this).attr("y"));
-			// 		var options = viewBlockMoveOptions(boardElementID,x,y);
-			// 		console.log();
-
-			// 		var n = 0;
-			// 		for (var i = 1; i <= 4; i++) {
-			// 			if(i == 1){ 
-			// 				var pos = "up";
-			// 			}else if(i == 2){
-			// 				var pos = "down";
-			// 			}else if(i == 3){
-			// 				var pos = "right";
-			// 			}else if(i == 4){
-			// 				var pos = "left";
-			// 			}else{
-			// 				continue;
-			// 			}
-			// 			if(options[pos]['moveableAmount'] == 0 && options[pos]['ranIntoStartBlock'] == false){
-			// 				n++;
-			// 			} 
-			// 		};
-			// 		if(n == 3){ //this block only has one entrance/exit, block it off for now
-			// 			// $(this).addClass("fillHole");
-			// 			console.log("fillHole options: x:"+x+"y:"+y);
-			// 			console.log(options);
-			// 			$(this).removeClass("off").addClass("map fillHole");
-			// 			// return false;
-			// 		}else if(n == 4){
-			// 			console.log("mkay fillHole->n is 4, that's a bug");
-			// 		}
-			// 	});
-			// 	console.log("fillHoles Finished")
-			// }
-
-			// // them english skills payin off arent they
-			// function mapStartToBlockHasLeftOvers(boardElementID,x,y){
-			// 	// console.log("mapFromStartToThisBlock called: x:"+x+" y:"+y);
-			// 	var totalOffBlocks = $("#"+boardElementID+" .off").length;
-			// 	var map = [];
-			// 	map.push(x+"-"+y);
-			// 	$("#"+boardElementID+"-"+x+"-"+y).addClass("map").removeClass("off");
-
-			// 	var openBlockStartPosCords = activeOpenBlockArray[boardElementID][0],
-			// 			openBlockStartPosCordsSplit = openBlockStartPosCords.split("-"),
-			// 			openBlockStart_x = parseInt(openBlockStartPosCordsSplit[0]),
-			// 			openBlockStart_y = parseInt(openBlockStartPosCordsSplit[1]);
-
-			// 	fillHoles(boardElementID);
-
-			// 	map.push(openBlockStart_x+"-"+openBlockStart_y);
-			// 	$("#"+boardElementID+"-"+openBlockStart_x+"-"+openBlockStart_y).addClass("map").removeClass("off");
-
-
-			// 	var	current_x = openBlockStart_x,
-			// 			current_y = openBlockStart_y,
-			// 			n = 0,
-			// 			totalBlocks = boardTotalBlocks(boardElementID);
-			// 	while(n <= totalBlocks){
-			// 		// console.log("while loop looking at x:"+current_x+" y:"+current_y+" n:"+n);
-			// 		var options = viewBlockMoveOptions(boardElementID,current_x,current_y);
-			// 				// console.log("options:");
-			// 				// console.log(options);
-			// 				if(options["up"]['moveableAmount'] == 0 && options["down"]['moveableAmount'] == 0 &&
-			// 					 options["right"]['moveableAmount'] == 0 && options["left"]['moveableAmount'] == 0
-			// 				){//if all options are 0 break;
-			// 					// console.log("breaking...all options are 0");
-			// 					break;
-			// 				}
-			// 		var bestMove = closestMove(options);
-			// 				// console.log("bestMove:"+bestMove);
-					
-			// 		var moveResults = moveCordsOneBlock(bestMove,current_x,current_y);
-			// 				// console.log("moveResults:");
-			// 				// console.log(moveResults);
-
-			// 		current_x = parseInt(moveResults['x']),
-			// 		current_y	= parseInt(moveResults['y']);
-			// 		// $('#'+boardElementID+" .mapActive").removeClass("mapActive").addClass("mapWasActive");
-			// 		// $('#'+boardElementID+"-"+current_x+"-"+current_y).addClass("mapActive");
-
-			// 		var indexMe = current_x+"-"+current_y,
-			// 				index = map.indexOf(indexMe);
-			// 		if(map.indexOf(indexMe) == -1){
-			// 			map.push(indexMe);
-			// 			$("#"+boardElementID+"-"+current_x+"-"+current_y).addClass("map").removeClass("off");
-			// 			// console.log("Just gave x:"+current_x+" y:"+current_y+" mapNo:"+n);
-			// 		}else{
-			// 			// console.log("mapStartToBlockHasLeftOvers() asked to index something that's already here: newIndex:"+indexMe);
-			// 			// console.log(map);
-			// 			return false;
-			// 		}
-
-					
-			// 		n++;
-			// 	}
-			// 	$('#'+boardElementID+" .map").addClass("off").removeClass("map");
-
-			// 	if(map.length != totalOffBlocks){
-			// 		console.log("HasLeftOvers: totalOffBlocks:"+totalOffBlocks+" map.length:"+map.length);
-			// 		return true;
-			// 	}
-			// 	console.log("NoLeftOvers: totalOffBlocks:"+totalOffBlocks+" map.length:"+map.length);
-			// 	return false;
-
-			// }
-
-
-
-
-			// ====
-			// from here 90%ish passrate
-			// ====
-
-			// var active_x = parseInt($("#"+boardElementID+" .active").attr('x')),
-			// 		active_y = parseInt($("#"+boardElementID+" .active").attr('y'));
-
-			// var percentage = percentageOfTheBoardTraversed(boardElementID);
-
-			// if(isThisMoveOpenOnBothSides(boardElementID,bestMove,active_x,active_y) && percentage >= .20){
-			// 	// console.log("open on both sides");
-			// 	//look for other blocks that are naked, if any other block isn't naked pick it
-			// 	var options = [];
-			// 	for (var k = 1; k <= 4; k++) {
-			// 		if(k == 1 && bestMove != "up"){
-			// 			var option = "up";
-			// 		}else if(k == 2 && bestMove != "down"){
-			// 			var option = "down";
-			// 		}else if(k == 3 && bestMove != "right"){
-			// 			var option = "right";
-			// 		}else if(k == 4 && bestMove != "left"){
-			// 			var option = "left";
-			// 		}else{
-			// 			continue;
-			// 		}
-			// 		if(moveOptions[option]['moveableAmount'] != 0 && !isThisMoveOpenOnBothSides(boardElementID,option)){
-			// 			options.push(option);
-			// 		}
-			// 	};
-			// 	if(options.length == 1){
-			// 		// console.log("changing bestMove to a closer item");
-			// 		bestMove = options[0];
-			// 	}else if(options.length == 2){
-
-			// 		if(moveOptions[options[0]]['moveableAmount'] < moveOptions[options[1]]['moveableAmount']){
-			// 			bestMove = options[0];
-			// 		}else{
-			// 			bestMove = options[1];
-			// 		}
-			// 		// console.log("rare:2 better options:pick the shorter option");
-			// 		// console.log("chosen option: "+bestMove);
-			// 	}else if(options.length == 2){
-			// 		// console.log("all options are open, do nothing");
-			// 	}
-			// 	//else everybodies naked! move on
-			// }
-
-			// ====
-			// Just this has a 25%ish passrate
-			// ====
-
-			// if(willThisMoveBlockStarter(boardElementID,bestMove)){
-			
-				// var oppDirArray = getOppositeDirections(bestMove);
-
-				// if(moveOptions[oppDirArray['opp']]['moveableAmount'] != 0){
-				// 	bestMove = oppDirArray['opp'];
-				// 	console.log("flipped:"+bestMove);
-				// }else{
-				// 	if(moveOptions[oppDirArray['od1']]['moveableAmount'] != 0 && moveOptions[oppDirArray['od2']]['moveableAmount'] != 0){
-				// 		if(moveOptions[oppDirArray['od1']]['moveableAmount'] < moveOptions[oppDirArray['od2']]['moveableAmount']){
-				// 			bestMove = oppDirArray['od1'];
-				// 			console.log("bestMove1:"+bestMove);
-				// 		}else{
-				// 			bestMove = oppDirArray['od2'];
-				// 			console.log("bestMove2:"+bestMove);
-				// 		}
-				// 	}else if(moveOptions[oppDirArray['od1']]['moveableAmount'] == 0){
-				// 		bestMove = oppDirArray['od2'];
-				// 		console.log("bestMove3:"+bestMove);
-				// 	}else if(moveOptions[oppDirArray['od2']]['moveableAmount'] == 0){
-				// 		bestMove = oppDirArray['od1'];
-				// 		console.log("bestMove4:"+bestMove);
-				// 	}
-				// }
-			// }
 
 		}
-		
-		// it should not come here, in this case it is a bug, 
-		// by moving this back here it just turns it into a crutch
-		// if(bestMove == "none"){
-		// 	bestMove = closestMove(moveOptions);
-		// 	// console.log("badMoves");
-		// 	// console.log(badMoves);
-		// 	// console.log("moveOptions");
-		// 	// console.log(moveOptions);
-		// }
-
+	
 		moveToNext(boardElementID,bestMove);
 	};
 	spliceFinishedBoards();
@@ -1060,19 +776,16 @@ var height = 8,
 		width = 8;
 
 
-// createBoard("alpha",height,width,6,2);//broken
-// createBoard("alpha",height,width,7,3);//broken
-createBoard("alpha",height,width,4,6);//crashes
-// createBoard("alpha",height,width,6,2);//broken
+// createBoard("alpha",height,width,5,3);//broken
+// createBoard("alpha2",height,width,1,2);//broken
+// createBoard("alpha",height,width,4,6);//broken
+// createBoard("alpha",height,width,8,8);//crashes
 
 
-
-
-
-// for (var i = 0; i < 4; i++) {
-// 	var foo = "place"+i;
-// 	createBoard(foo,height,width);
-// };
+for (var i = 0; i < 1; i++) {
+	var foo = "place"+i;
+	createBoard(foo,height,width);
+};
 
 
 $('.board').on("click",function(){
@@ -1089,6 +802,16 @@ window.addEventListener("keydown", function(e) {
     }
 }, false);
 
+$('#new').on("click",function(){
+	$('.board').remove();
+	activeBoards = [];
+	activeOpenBlockArray = [];
+	createBoard(foo,height,width);
+});
+$('#playButton').on("click",function(){
+	thinkTankLoop();
+});
+
 $('body').on("keyup",function(e){
 	// console.log("received key: "+e.keyCode);
 	switch(e.keyCode){
@@ -1096,8 +819,7 @@ $('body').on("keyup",function(e){
 			var direction = "space";
 			break;
 		case 93://command
-			var direction = "command",
-					selected = $('.selected').attr("id");
+			var direction = "command";
 			break;
 		case 39://right
 			var direction = "right",
@@ -1122,7 +844,6 @@ $('body').on("keyup",function(e){
 	// console.log(direction);
 	if(direction == "command"){
 		thinkTank();
-		// canTraverseThroughRestOfBoardWithoutThisBlock("alpha");
 		return;
 	}
 	if(direction == "space"){
