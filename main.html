@@ -681,7 +681,6 @@ function thinkTank(){
 			for (var i = 0; i < moveOptions['legitMoves'].length; i++) {
 				var pos = moveOptions['legitMoves'][i];
 
-				console.log("pos:"+pos);
 
 				var cords = moveCordsOneBlock(pos,active_x,active_y),
 						x = parseInt(cords['x']),
@@ -695,10 +694,6 @@ function thinkTank(){
 					if(openOn == "opposite"){
 						var opposites = getOppositeDirections(pos),
 								openOn = opposites['opp'];
-					}else if(openOn != "null"){
-						console.log("================");
-						console.log("openOn fired correctly: "+openOn);
-						console.log("================");
 					}
 
 					if(moveOptions['legitMoves'].indexOf(openOn) != -1){
@@ -706,15 +701,11 @@ function thinkTank(){
 						break;
 					}
 				}else{
-					console.log("pushing pos:"+pos);
 					bestMoveToPickFromArray.push(pos);
 				}
 			};
 
 			if(bestMove == "none"){
-				console.log("bestMove == none picking closestMove");
-				console.log("bestMoveToPickFromArray");
-				console.log(bestMoveToPickFromArray);
 				bestMove = closestMove(moveOptions,bestMoveToPickFromArray);
 			}
 
