@@ -159,7 +159,13 @@ function createActiveOpenBlockArray(boardElementID,x,y){
 
 
 
-function moveToNext(boardElementID,direction){
+function moveToNext(boardElementID,direction,userTouched){
+	if(userTouched == 1){
+		if(!$("#"+boardElementID).hasClass("userTouched")){
+			$("#"+boardElementID).addClass("userTouched");
+		}
+	}
+
 	var x = $('#'+boardElementID+' .active').attr('x'),
 			y = $('#'+boardElementID+' .active').attr('y');
 
@@ -465,7 +471,7 @@ function traverseAllPathsIsPossible(boardElementID,block_x,block_y){
 	var isPossible = false,
 			openOn = "null";
 
-	if(activeOpenBlockArray[boardElementID].length >= 2){
+	if(activeOpenBlockArray[boardElementID].length >= 2 && !$("#"+boardElementID).hasClass("userTouched")){
 		isPossible = true;
 		return {"boolean":isPossible,"openOn":openOn};
 	}
@@ -874,7 +880,7 @@ $('body').on("keyup",function(e){
 		return;
 	}
 	if($('.selected').length){
-		moveToNext(selected,direction);
+		moveToNext(selected,direction,1);
 	}
 	
 });
