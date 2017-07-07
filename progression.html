@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<head>
+	<title>Knights of the round square</title>
+
+	<script type="text/javascript" src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+	<!-- // <script type="text/javascript" src="/scripts/jquery-1.10.2.js"></script> -->
+	<!-- // <script type="text/javascript" src="/scripts/1.11.0-jquery-ui.js"></script> -->
+</head>
+
+
+
+<style type="text/css">
+	*{
+		margin: 0px;padding: 0px;
+		-moz-box-sizing: border-box;
+		-webkit-box-sizing: border-box;
+		box-sizing: border-box;
+	}
+	.board{
+		float: left;
+		padding: 5px;
+	}
+	.board.success{
+		background-color: rgba(0,255,0,.2);
+	}
+	.board.failed{
+		background-color: rgba(255,0,0,.2);
+	}
+	.board.selected{
+		background-color: rgba(255,255,0,.2);
+	}
+	.board.selected.success{
+		box-shadow: inset 0px 0px 3px 5px rgba(0,255,0,.5);
+	}
+	.board.selected.failed{
+		box-shadow: inset 0px 0px 3px 5px rgba(255,0,0,.5);
+	}
+
+	.box{
+		margin: 3px;
+		height: 20px; width: 20px;
+		border: 1px solid black;
+		float: left;
+	}
+	.box.on{
+		background-color: blue;
+	}
+	.box.beenHereAlready{
+		background-color: red;
+	}
+	.box.start{
+		background-color: green;
+	}
+	.box.traversedBlock{
+		background-color: rgba(255,0,255,.4);
+	}
+
+
+	.box.active{
+		border: 4px solid orange;
+	}
+	#playButton,#new{
+		margin: 10px;
+		width: 100%;
+		max-width: 200px;
+		height: 40px;
+	}
+</style>
+
+
+
+<body>
+	<button id="new">new</button>
+	<button id="playButton">start/stop</button>
+	
+
+</body>
+
+
+
+
+
+
+
+
+
+
+
+
+<script type="text/javascript">
+
+// ============================================================================================
+// == General Start
+// ============================================================================================
+activeOpenBlockArray = [];
+boardsToSplice = [];
+
+function boardFinished(boardElementID){
+	if(!$("#"+boardElementID+" .off:not(.start)").length && 
+		!$("#"+boardElementID+" .beenHereAlready:not(.start)").length){
+		console.log("Success! "+boardElementID+" has been completed!");
+		// console.log("off.length:"+$("#"+boardElementID+" .off").length+"beenHereAlready.length"+$("#"+boardElementID+" .beenHereAlready").length);
+		$("#"+boardElementID).addClass("success");
+	}else{
+		console.log("Failed! "+boardElementID+" was not completed!");
+		// console.log("off.length:"+$("#"+boardElementID+" .off").length+"beenHereAlready.length"+$("#"+boardElementID+" .beenHereAlready").length);
+		$("#"+boardElementID).addClass("failed");
+	}
+	// var foo = $("#"+boardElementID+" .off").attr('id');
+	// console.log(foo);
+
+	//remove from progress array
+	var index = activeBoards.indexOf(boardElementID);
+	if (index > -1) {
+		boardsToSplice.push(boardElementID);
+    // activeBoards.splice(index, 1);
+	}
+}
+function spliceFinishedBoards(){
+	for (var i = 0; i < boardsToSplice.length; i++) {
+		var board = boardsToSplice[i];
+
+		var index = activeBoards.indexOf(board);
+		if (index > -1) {
+	    activeBoards.splice(index, 1);
+		}
+	};
+}
+
+
+function createBoard(boardElementID,height,width,startX,startY){
+	activeBoards[activeBoards.length] = boardElementID;
+
+	$('body').append('<div class="board" size="'+width+'x'+height+'" id="'+boardElementID+'"></div>');
+	var w = 1,
+			h = 1;
+	while(h <= height){//height		
+		w = 1;
+		while(w <= width){//width
+			$('#'+boardElementID).append('<div id="'+boardElementID+'-'+w+'-'+h+'" class="box off" x="'+w+'" y="'+h+'"></div>');
+			w++;
+		}
+		$('#'+boardElementID).append('<div style="clear:both;"></div>');
+		h++;
+	}
+	chooseStart(boardElementID,height,width,startX,startY);
+}
+
+function chooseStart(boardElementID,height,width,x,y){
+	if(x == undefined){
+		var x = parseInt(Math.floor((Math.random() * width) + 1));
+	}
+	if(y == undefined){
+		var y = parseInt(Math.floor((Math.random() * height) + 1));
+	}
+	$('#'+boardElementID+'-'+x+'-'+y).addClass("start active on").removeClass("off");
+	createActiveOpenBlockArray(boardElementID,x,y);
+}
+
+function createActiveOpenBlockArray(boardElementID,x,y){
+	// console.log("Init: x:"+x+" y:"+y);
+	activeOpenBlockArray[boardElementID] = [];
+
+	var top_y = y-1;
+	if($("#"+boardElementID+"-"+x+"-"+top_y).length){
+		activeOpenBlockArray[boardElementID].push(x+"-"+top_y);
+	}
+	var bottom_y = y+1;
+	if($("#"+boardElementID+"-"+x+"-"+bottom_y).length){
+		activeOpenBlockArray[boardElementID].push(x+"-"+bottom_y);
+	}
+	var right_x = x+1;
+	if($("#"+boardElementID+"-"+right_x+"-"+y).length){
+		activeOpenBlockArray[boardElementID].push(right_x+"-"+y);
+	}
+	var left_x = x-1;
+	if($("#"+boardElementID+"-"+left_x+"-"+y).length){
+		activeOpenBlockArray[boardElementID].push(left_x+"-"+y);
+	}
+	
+}
+
+
+
+function moveToNext(boardElementID,direction){
+	var x = $('#'+boardElementID+' .active').attr('x'),
+			y = $('#'+boardElementID+' .active').attr('y');
+
+	switch(direction){
+		case "up": y--;break;
+		case "down": y++;break;
+		case "right": x++;break;
+		case "left": x--;break;
+		default:console.log("moveToNext(): direction not recognized: "+direction);break;
+	}
+	var removeFromActiveArray = x+"-"+y,
+			removeFromActiveArrayIndex = activeOpenBlockArray[boardElementID].indexOf(removeFromActiveArray);
+	if(removeFromActiveArrayIndex != -1){
+		// console.log(activeOpenBlockArray[boardElementID]);
+		activeOpenBlockArray[boardElementID].splice(removeFromActiveArrayIndex,1);
+		// console.log("spliced: "+removeFromActiveArrayIndex);
+		// console.log(activeOpenBlockArray[boardElementID]);
+	}
+
+
+
+	moveToThisElement = '#'+boardElementID+'-'+x+'-'+y;
+	if(!$(moveToThisElement).length){
+		console.log("moveToNext(): asked to move to this element but it doesn't exist: "+moveToThisElement);
+		boardFinished(boardElementID);
+		return;
+	}
+	if($(moveToThisElement).hasClass("on")){
+		$(moveToThisElement).addClass("beenHereAlready");
+		boardFinished(boardElementID);
+	}
+	if($(moveToThisElement).hasClass("start")){
+		boardFinished(boardElementID);
+	}
+
+	$('#'+boardElementID+' .active').removeClass("active");
+	$(moveToThisElement).addClass("active on").removeClass("off");
+}
+
+
+
+function doesBlockExist(boardElementID,x,y){
+	if($("#"+boardElementID+"-"+x+"-"+y).length){
+		return true;
+	}
+	return false;
+}
+
+
+
+function blockHasClass(className,boardElementID,x,y){
+	if($("#"+boardElementID+"-"+x+"-"+y).hasClass(className)){
+		return true;
+	}
+	return false;
+}
+
+function blockIsOpenAndExists(boardElementID,x,y,debug){
+	if(doesBlockExist(boardElementID,x,y) && blockHasClass("off",boardElementID,x,y)){
+		if(debug != undefined){
+			console.log("Block x:"+x+" y:"+y+" exists and is open");
+		}
+		return true;
+	}
+	if(debug != undefined){
+		console.log("Block x:"+x+" y:"+y+" does not exist and/or is not open");
+	}
+	return false;
+}
+
+function isNextToActiveBlock(boardElementID,x,y){
+	for (var i = 1; i <= 4; i++) {
+		if(i == 1){
+			var dir = "up";
+		}else if(i == 2){
+			var dir = "down";
+		}else if(i == 3){
+			var dir = "right";
+		}else if(i == 4){
+			var dir = "left";
+		}else{
+			continue;
+		} 
+		var cords = moveCordsOneBlock(dir,x,y),
+				cord_x = parseInt(cords['x']),
+				cord_y = parseInt(cords['y']);
+		if(doesBlockExist(boardElementID,cord_x,cord_y) && blockHasClass("active",boardElementID,cord_x,cord_y)){
+			return  true;
+		}
+	};
+	return false;
+}
+
+
+// function onlyOneOpenBlockRemains(boardElementID){
+// 	var count = $("#"+boardElementID+" .off").length;
+// 	if(count <= 1){
+// 		return true;
+// 	}
+// 	return false;
+// }
+
+
+
+
+function viewBlockMoveOptions(boardElementID,x,y){
+
+	// console.log("viewBlockMoveOptions x:"+x+" y:"+y);
+
+	var data = [];
+	data["legitMoves"] = []; 
+	for (var i = 0; i < 4; i++) {
+		switch (i){
+			case 0://up
+				var pos = "up", cord = y,
+						cordIncrementor = -1;
+				break;
+			case 1://down
+				var pos = "down", cord = y,
+						cordIncrementor = 1;
+				break;	
+			case 2://right
+				var pos = "right"; cord = x,
+						cordIncrementor = 1;
+				break;
+			case 3://left
+				var pos = "left"; cord = x,
+						cordIncrementor = -1;
+				break;
+			default:
+				break;
+		}
+
+		data[pos] = []; 
+		data[pos]['moveableAmount'] = 0;
+		data[pos]['ranIntoStartBlock'] = false;
+		var checkPos = cord+cordIncrementor;
+		
+		n = 0; 
+		max = maxMoveRange(boardElementID);
+		while(n <= max){
+			if(i == 0 || i == 1){//up or down
+				// console.log("pos: "+pos+" x:"+x+" checkPos(y): "+checkPos);
+				if(!blockIsOpenAndExists(boardElementID,x,checkPos) && 
+					!blockHasClass("traversedBlock",boardElementID,x,checkPos))
+				{
+
+					// console.log("Breaking pos: "+pos+" x:"+x+" checkPos(y): "+checkPos);
+					if(blockHasClass("start",boardElementID,x,checkPos)){
+						data[pos]['ranIntoStartBlock'] = true;
+					}
+					
+					break;
+				}
+			}else{//right or left
+				// console.log("pos: "+pos+" y:"+y+" checkPos(x): "+checkPos);
+				if(!blockIsOpenAndExists(boardElementID,checkPos,y) &&
+					!blockHasClass("traversedBlock",boardElementID,checkPos,x))
+				{
+
+					// console.log("Breaking pos: "+pos+" checkPos(x): "+checkPos+" y:"+y);
+					if(blockHasClass("start",boardElementID,checkPos,y)){
+						data[pos]['ranIntoStartBlock'] = true;
+					}
+					
+					break;
+				}
+			}			
+			data[pos]['moveableAmount']++;
+			checkPos += cordIncrementor;
+
+			if(n >= 100){
+				console.log("n is too long, increase if this is not an error: "+n);
+				break;
+			}
+			n++;
+		}	
+		if(data[pos]['moveableAmount'] >= 1){
+			data["legitMoves"].push(pos);
+		}
+	};
+	return data;
+}
+// console.log(viewBlockMoveOptions(boardElementID,x,y));
+
+function moveCordsOneBlock(dir,x,y){
+	if(dir == "up"){
+		y--;
+	}else if(dir == "down"){
+		y++;
+	}else if(dir == "right"){
+		x++;
+	}else if(dir == "left"){
+		x--;
+	}else{
+		console.log("moveCordsDirection() direction not recognized: "+dir);
+	}
+	// console.log("moveCordsOneBlock() dir:"+dir);
+	return {"x":x,"y":y};
+}
+
+function getOppositeDirections(dir){
+	// console.log("getOppositeDirections");
+	// console.log("dir:"+dir);
+	if(dir == "up"){
+		var opp = "down",od1 = "right",od2 = "left";
+	}else if(dir == "down"){
+		var opp = "up",od1 = "right",od2 = "left";
+	}else if(dir == "right"){
+		var opp = "left", od1 = "up", od2 = "down";
+	}else if(dir == "left"){
+		var opp = "right", od1 = "up", od2 = "down";
+	}else{
+		console.log("getOppositeDirections() direction not recognized: "+dir); return	false;
+	}
+	// console.log("opp:"+opp);
+	return {"opp":opp,"od1":od1,"od2":od2};
+}
+
+function boardTotalBlocks(boardElementID){
+	var size = $('#'+boardElementID).attr('size'),
+			sizeArray = size.split("x"),
+			widthBlocks = parseInt(sizeArray[0]),
+			heightBlocks = parseInt(sizeArray[1]),
+			totalBlocks = widthBlocks*heightBlocks;
+	return totalBlocks;
+}
+
+function maxMoveRange(boardElementID){
+	var size = $('#'+boardElementID).attr('size'),
+			sizeArray = size.split("x"),
+			widthBlocks = parseInt(sizeArray[0]),
+			heightBlocks = parseInt(sizeArray[1]);
+	if(widthBlocks > heightBlocks){
+		return widthBlocks;
+	}else{
+		return heightBlocks;
+	}
+}
+
+function percentageOfTheBoardTraversed(boardElementID){
+	var totalBlocks = boardTotalBlocks(boardElementID),
+			onBlocks = $('#'+boardElementID+" .on").length,
+			percentage = onBlocks/totalBlocks;
+	return percentage;
+}
+
+// ============================================================================================
+// == General End
+// ============================================================================================
+// == thinkTankBrainFood Start
+// ============================================================================================
+
+function closestMove(movesArray,allowedMoves){
+	bestMove = "none";
+	for (var i = 1; i <= 4; i++) {
+		if(i == 1){
+			var pos = "up";
+		}else if(i == 2){
+			var pos = "down";
+		}else if(i == 3){
+			var pos = "right";
+		}else if(i == 4){
+			var pos = "left";
+		}else{
+			continue;
+		}
+		// console.log("Position");
+		// console.log(pos);
+		// console.log(movesArray[pos]);
+
+		if(movesArray[pos]['moveableAmount'] == 0){
+			continue;
+		}
+		if(allowedMoves != undefined && allowedMoves.indexOf(pos) == -1){
+			continue;
+		}
+
+
+		if(bestMove == "none" || movesArray[pos]['moveableAmount'] < movesArray[bestMove]['moveableAmount']){
+			bestMove = pos;
+		}
+	};
+	return bestMove;
+}
+
+function isThisMoveOpenOnBothSides(boardElementID,dir,cur_x,cur_y){//Naked means, is it empty on 3 sides
+	
+	var nextMoveCords = moveCordsOneBlock(dir,cur_x,cur_y);
+
+	var oppDirs = getOppositeDirections(dir);
+
+	var od1_cords = moveCordsOneBlock(oppDirs['od1'],nextMoveCords['x'],nextMoveCords['y']);
+	var od2_cords = moveCordsOneBlock(oppDirs['od2'],nextMoveCords['x'],nextMoveCords['y']);
+
+	if(blockIsOpenAndExists(boardElementID,od1_cords["x"],od1_cords["y"]) &&
+		blockIsOpenAndExists(boardElementID,od2_cords["x"],od2_cords["y"])){
+		// console.log("TRUE move dir:"+dir+" cur_x:"+cur_x+" cur_y:"+cur_y);
+		return true;
+	}
+	return false;
+}
+
+// sometimes there's a block with an entrance
+// but no exit while mapping
+// fill this for now
+// function fillHoles(boardElementID){
+// 	console.log("fillHoles called");
+// 	$("#"+boardElementID+" .off").each(function(){
+// 		var x = parseInt($(this).attr("x")),
+// 				y = parseInt($(this).attr("y"));
+// 		var options = viewBlockMoveOptions(boardElementID,x,y);
+// 		console.log();
+
+// 		var n = 0;
+// 		for (var i = 1; i <= 4; i++) {
+// 			if(i == 1){ 
+// 				var pos = "up";
+// 			}else if(i == 2){
+// 				var pos = "down";
+// 			}else if(i == 3){
+// 				var pos = "right";
+// 			}else if(i == 4){
+// 				var pos = "left";
+// 			}else{
+// 				continue;
+// 			}
+// 			if(options[pos]['moveableAmount'] == 0 && options[pos]['ranIntoStartBlock'] == false){
+// 				n++;
+// 			} 
+// 		};
+// 		if(n == 3){ //this block only has one entrance/exit, block it off for now
+// 			// $(this).addClass("fillHole");
+// 			console.log("fillHole options: x:"+x+"y:"+y);
+// 			console.log(options);
+// 			$(this).removeClass("off").addClass("map fillHole");
+// 			// return false;
+// 		}else if(n == 4){
+// 			console.log("mkay fillHole->n is 4, that's a bug");
+// 		}
+// 	});
+// 	console.log("fillHoles Finished")
+// }
+
+// them english skills payin off arent they
+// function mapStartToBlockLeftOvers(boardElementID,x,y){
+// 	// console.log("mapFromStartToThisBlock called: x:"+x+" y:"+y);
+// 	var totalOffBlocks = $("#"+boardElementID+" .off").length;
+// 	var map = [];
+// 	map.push(x+"-"+y);
+// 	$("#"+boardElementID+"-"+x+"-"+y).addClass("map").removeClass("off");
+
+// 	var openBlockStartPosCords = activeOpenBlockArray[boardElementID][0],
+// 			openBlockStartPosCordsSplit = openBlockStartPosCords.split("-"),
+// 			openBlockStart_x = parseInt(openBlockStartPosCordsSplit[0]),
+// 			openBlockStart_y = parseInt(openBlockStartPosCordsSplit[1]);
+
+// 	// fillHoles(boardElementID);
+
+// 	map.push(openBlockStart_x+"-"+openBlockStart_y);
+// 	$("#"+boardElementID+"-"+openBlockStart_x+"-"+openBlockStart_y).addClass("map").removeClass("off");
+
+
+// 	var	current_x = openBlockStart_x,
+// 			current_y = openBlockStart_y,
+// 			n = 0,
+// 			totalBlocks = boardTotalBlocks(boardElementID);
+// 	while(n <= totalBlocks){
+// 		// console.log("while loop looking at x:"+current_x+" y:"+current_y+" n:"+n);
+// 		var options = viewBlockMoveOptions(boardElementID,current_x,current_y);
+// 				// console.log("options:");
+// 				// console.log(options);
+// 				if(options["up"]['moveableAmount'] == 0 && options["down"]['moveableAmount'] == 0 &&
+// 					 options["right"]['moveableAmount'] == 0 && options["left"]['moveableAmount'] == 0
+// 				){//if all options are 0 break;
+// 					// console.log("breaking...all options are 0");
+// 					break;
+// 				}
+// 		var bestMove = closestMove(options);
+// 				// console.log("bestMove:"+bestMove);
+		
+// 		var moveResults = moveCordsOneBlock(bestMove,current_x,current_y);
+// 				// console.log("moveResults:");
+// 				// console.log(moveResults);
+
+// 		current_x = parseInt(moveResults['x']),
+// 		current_y	= parseInt(moveResults['y']);
+// 		// $('#'+boardElementID+" .mapActive").removeClass("mapActive").addClass("mapWasActive");
+// 		// $('#'+boardElementID+"-"+current_x+"-"+current_y).addClass("mapActive");
+
+// 		var indexMe = current_x+"-"+current_y,
+// 				index = map.indexOf(indexMe);
+// 		if(map.indexOf(indexMe) == -1){
+// 			map.push(indexMe);
+// 			$("#"+boardElementID+"-"+current_x+"-"+current_y).addClass("map").removeClass("off");
+// 			// console.log("Just gave x:"+current_x+" y:"+current_y+" mapNo:"+n);
+// 		}else{
+// 			// console.log("mapStartToBlockHasLeftOvers() asked to index something that's already here: newIndex:"+indexMe);
+// 			// console.log(map);
+// 			return false;
+// 		}
+
+		
+// 		n++;
+// 	}
+// 	$('#'+boardElementID+" .map").addClass("off").removeClass("map");
+
+// 	var foo = map.length/totalOffBlocks;
+// 	if(foo <= 0.49){
+// 		console.log("True:LeftOvers: totalOffBlocks:"+totalOffBlocks+" map.length:"+map.length);
+// 		return true;
+// 	}
+// 	console.log("False:LeftOvers: totalOffBlocks:"+totalOffBlocks+" map.length:"+map.length);
+// 	return false;
+
+// }
+
+function startBlockIsTouchingATraverseBlockButNotThisBlock(boardElementID,x,y){
+	var start_x = parseInt($("#"+boardElementID+" .start").attr("x")),
+			start_y = parseInt($("#"+boardElementID+" .start").attr("y"));
+
+	for (var i = 1; i < 4; i++) {
+		if(i == 1){
+			var dir = "up";
+		}else if(i == 2){
+			var dir = "down";
+		}else if(i == 3){
+			var dir = "right";
+		}else if(i == 4){
+			var dir = "left";
+		}else{
+			continue;
+		}
+		var cords = moveCordsOneBlock(dir,start_x,start_y),
+				cord_x = parseInt(cords['x']),
+				cord_y = parseInt(cords['y']);
+		
+		if(doesBlockExist(boardElementID,cord_x,cord_y) && 
+			blockHasClass("traversedBlock",boardElementID,cord_x,cord_y) && 
+			(cord_x == x && cord_y == y) )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+function traverseAllPathsIsPossible(boardElementID,block_x,block_y){
+	console.log("traverseAllPathsIsPossible starting");
+
+	
+
+	var isPossible = false,
+			openOn = "null";
+
+
+	if(activeOpenBlockArray[boardElementID].length >= 2){
+		isPossible = true;
+		return {"boolean":isPossible,"openOn":openOn};
+	}
+	
+	if(!activeOpenBlockArray[boardElementID][0]){
+		boardFinished(boardElementID);
+		return {"boolean":isPossible,"openOn":openOn};
+	}	
+	activeOpenBlockArray[boardElementID][0];
+
+
+	var openBlockStartPosCords = activeOpenBlockArray[boardElementID][0],
+			openBlockStartPosCordsSplit = openBlockStartPosCords.split("-"),
+			x = parseInt(openBlockStartPosCordsSplit[0]),
+			y = parseInt(openBlockStartPosCordsSplit[1]);
+
+	// var x = 4,
+	// y = 1,
+	// block_x = 4,
+	// block_y = 7;
+
+	console.log("block_x:"+block_x+" block_y:"+block_y);
+	console.log("x:"+x+" y:"+y);
+
+	if(block_x == x && block_y == y){
+		openOn = "opposite";
+		return {"boolean":isPossible,"openOn":openOn};
+	}
+	var totalOffBlocks = $("#"+boardElementID+" .off").length;
+	$("#"+boardElementID+"-"+block_x+"-"+block_y).addClass("traversedBlock");
+
+	
+	$("#"+boardElementID+"-"+x+"-"+y).addClass("traversedBlock");
+	var traverseBlocks = [{"x":x,"y":y}];
+	while(traverseBlocks.length >= 1){
+		x = traverseBlocks[0]['x'],
+		y = traverseBlocks[0]['y'];
+		// console.log("loop x:"+x+" y:"+y);
+		var moveOptions = viewBlockMoveOptions(boardElementID,x,y);
+		// console.log(moveOptions);
+		for (var m = 1; m <= 4; m++) {
+			// console.log("first loop m:"+m);
+			if(m == 1){
+				var dir = "up";
+			}else if(m == 2){
+				var dir = "down";
+			}else if(m == 3){
+				var dir = "right";
+			}else if(m == 4){
+				var dir = "left";
+			}else{
+				continue;
+			} 
+			if(moveOptions[dir]['moveableAmount'] != 0){
+				var newCords = moveCordsOneBlock(dir,x,y),
+						new_x = newCords["x"],
+						new_y = newCords["y"];
+				// console.log("hello:"+moveOptions[dir]['moveableAmount']);
+
+				if(!blockHasClass("traversedBlock",boardElementID,new_x,new_y) && !blockHasClass("on",boardElementID,new_x,new_y)){
+					// console.log("pushing new cords: x:"+new_x+" y:"+new_y);
+					$("#"+boardElementID+"-"+new_x+"-"+new_y).addClass("traversedBlock");
+					traverseBlocks.push(newCords);
+				}
+			}
+
+		};
+		
+		traverseBlocks.shift();//remove first element
+	}
+	var totalTraversedBlocks = $("#"+boardElementID+" .traversedBlock").length;
+
+	console.log("willThisBlockCloseOffStarter finished");
+	console.log("totalOffBlocks: "+totalOffBlocks+" totalTraversedBlocks:"+totalTraversedBlocks);
+	
+	//&& startBlockIsTouchingATraverseBlockButNotThisBlock(boardElementID,block_x,block_y)
+	if(totalOffBlocks == totalTraversedBlocks){
+		isPossible = true;
+	}else{
+		//find which side this block is open on
+		// $("#"+boardElementID+"-"+block_x+"-"+block_y)
+		for (var n = 1; n <= 4; n++) {
+			// console.log("second loop n:"+n);
+			if(n == 1){
+				var dir = "up";
+			}else if(n == 2){
+				var dir = "down";
+			}else if(n == 3){
+				var dir = "right";
+			}else if(n == 4){
+				var dir = "left";
+			}else{
+				continue;
+			} 
+			var cords = moveCordsOneBlock(dir,block_x,block_y),
+					cord_x = parseInt(cords['x']),
+					cord_y = parseInt(cords['y']);
+
+			if(blockIsOpenAndExists(boardElementID,cord_x,cord_y) && !blockHasClass("traversedBlock",boardElementID,cord_x,cord_y)){
+				console.log("traverse is returning these cords");
+				console.log("cord_x:"+cord_x+"cord_y:"+cord_y);
+
+				// check this block to see if it has more room to run
+				// if block to right/left or top/bottom are open and right/left or 
+				// top/bottom are closed do not pick this block
+
+				//move these cords one // need to be moved to touch this block and start
+				for (var i = 1; i <= 4; i++) {
+					// console.log("third loop i:"+i);
+					if(i == 1){
+						var dir2 = "up";
+					}else if(i == 2){
+						var dir2 = "down";
+					}else if(i == 3){
+						var dir2 = "right";
+					}else if(i == 4){
+						var dir2 = "left";
+					}else{
+						continue;
+					} 
+					var cords2 = moveCordsOneBlock(dir2,cord_x,cord_y),
+							cord_x2 = parseInt(cords2['x']),
+							cord_y2 = parseInt(cords2['y']);
+					if(blockIsOpenAndExists(boardElementID,cord_x2,cord_y2) && 
+						!blockHasClass("traversedBlock",boardElementID,cord_x2,cord_y2) &&
+						isNextToActiveBlock(boardElementID,cord_x2,cord_y2))
+					{	
+						break;
+					}
+				};
+				console.log("cord_x2:"+cord_x2+"cord_y2:"+cord_y2);
+				
+				console.log("Here we are");
+				var top_y	= cord_y2-1,
+						bottom_y = cord_y2+1,
+						right_x = cord_x2+1,
+						left_x = cord_x2-1;
+				//top//bottom//right//left
+				console.log("cords we are checking dir2: "+dir2);
+				console.log("top x:"+cord_x2+" y:"+top_y);
+				console.log("bottom x:"+cord_x2+" y:"+bottom_y);
+				console.log("right x:"+right_x+" y:"+cord_y2);
+				console.log("left x:"+left_x+" y:"+cord_y2);
+
+
+				if(blockIsOpenAndExists(boardElementID,cord_x2,top_y,"DEBUG") && blockIsOpenAndExists(boardElementID,cord_x2,bottom_y,"DEBUG") &&
+					!blockIsOpenAndExists(boardElementID,right_x,cord_y2,"DEBUG") && !blockIsOpenAndExists(boardElementID,left_x,cord_y2,"DEBUG")
+					){
+					continue;
+				}else{
+					console.log("this did not fire 1");
+				}
+				//right//left//top//bottom
+				if(blockIsOpenAndExists(boardElementID,right_x,cord_y2) && blockIsOpenAndExists(boardElementID,left_x,cord_y2) &&
+					!blockIsOpenAndExists(boardElementID,cord_x2,top_y) && !blockIsOpenAndExists(boardElementID,cord_x2,bottom_y)
+					){
+					continue;
+				}else{
+					console.log("this did not fire 2");
+				}
+				console.log("it passed");
+
+				openOn = dir;
+				break;
+			}
+		};
+		
+	}
+	$("#"+boardElementID+" .traversedBlock").removeClass("traversedBlock");
+
+	
+	console.log("willThisBlockCloseOffStarter: boolean:"+isPossible+" openOn:"+openOn);
+	return {"boolean":isPossible,"openOn":openOn};
+
+}
+
+
+
+
+// function willThisBlockCloseOffStarter(boardElementID,x,y){
+// 	// console.log(activeOpenBlockArray[boardElementID]);
+
+
+
+// 	if(willThisBlockCloseOffStarter(boardElementID,x,y)){
+// 		return false;
+// 	}
+
+// 	// will the moves after this be traversable?
+
+// 	// will it leave any holes?
+	
+
+// 	return true;
+// }
+
+
+
+// ============================================================================================
+// == thinkTankBrainFood End
+// ============================================================================================
+// == thinkTank Start
+// ============================================================================================
+
+function thinkTank(){
+	console.log("thinkTank");
+	console.log(activeBoards);
+	if(activeBoards.length == 0){
+		clearInterval(thinkTankLoop_timer);
+		thinkTankLoop_timer = 0;
+		return;
+	}
+
+	for (var i = 0; i < activeBoards.length; i++) {
+
+
+		var boardElementID = activeBoards[i],
+				x = parseInt($('#'+boardElementID+" .active").attr('x')),
+				y = parseInt($('#'+boardElementID+" .active").attr('y'));
+
+		
+
+
+		var moveOptions = viewBlockMoveOptions(boardElementID,x,y);
+		// console.log(boardElementID);
+		// console.log(results);
+		
+		var bestMove = "none";
+
+		// If there's no moves or only one move, 
+		// then it's quite obvious isn't it
+		// if(moveOptions['up']['moveableAmount'] == 0 &&
+		// 	moveOptions['down']['moveableAmount'] == 0 && 
+		// 	moveOptions['right']['moveableAmount'] == 0 &&
+		// 	moveOptions['left']['moveableAmount'] == 0)
+		if(moveOptions["legitMoves"].length == 0){
+
+			for (var i = 1; i <= 4; i++) {
+				if(i == 1){
+					var pos = "up";
+				}else if(i == 2){
+					var pos = "down";
+				}else if(i == 3){
+					var pos = "right";
+				}else if(i == 4){
+					var pos = "left";
+				}else{
+					console.log('thinkTank():'+boardElementID+': has no where to move, finished');
+					boardFinished(boardElementID);
+					continue;
+				}
+				if(moveOptions[pos]['ranIntoStartBlock']){
+					bestMove = pos;
+					$('#'+boardElementID+" .start").removeClass("on").addClass("off");
+				}
+			};
+		}else if(moveOptions["legitMoves"].length == 1){
+			bestMove = moveOptions["legitMoves"][0];
+		}
+
+
+
+		if(bestMove == "none"){
+			var bestMoveToPickFromArray = [];
+
+			var active_x = parseInt($("#"+boardElementID+" .active").attr('x')),
+					active_y = parseInt($("#"+boardElementID+" .active").attr('y'));
+
+			for (var i = 0; i < moveOptions['legitMoves'].length; i++) {
+				var pos = moveOptions['legitMoves'][i];
+
+				console.log("pos:"+pos);
+
+				var cords = moveCordsOneBlock(pos,active_x,active_y),
+						x = parseInt(cords['x']),
+						y = parseInt(cords['y']);
+
+				var result = traverseAllPathsIsPossible(boardElementID,x,y);
+				if(result['boolean'] == false){//openOn
+					console.log("boolean is false:"+result['boolean']);
+					var openOn = result['openOn'];
+					
+					if(openOn == "opposite"){
+						var opposites = getOppositeDirections(pos),
+								openOn = opposites['opp'];
+					}else if(openOn != "null"){
+						console.log("================");
+						console.log("openOn fired correctly: "+openOn);
+						console.log("================");
+					}
+
+					if(moveOptions['legitMoves'].indexOf(openOn) != -1){
+						bestMove = openOn;
+						break;
+					}
+				}else{
+					console.log("pushing pos:"+pos);
+					bestMoveToPickFromArray.push(pos);
+				}
+			};
+
+			if(bestMove == "none"){
+				console.log("bestMove == none picking closestMove");
+				console.log("bestMoveToPickFromArray");
+				console.log(bestMoveToPickFromArray);
+				bestMove = closestMove(moveOptions,bestMoveToPickFromArray);
+			}
+
+
+
+			// 
+
+			// var x = 1,
+			// 		badMoves = [];
+			// while(willThisMoveBlockStarter(boardElementID,bestMove)){
+			// // 	console.log("Loop bestMove:"+bestMove +" loopCount"+x);
+			// 	badMoves.push(bestMove);
+			// 	bestMove = closestMove(moveOptions,badMoves);
+			// 	if(x>=4){
+			// 		console.log("while no good moves found");
+			// 		boardFinished(boardElementID);
+			// 		break;
+			// 	}
+			// 	x++;
+			// }
+	
+
+			// =======================================================================
+			// == old code, keep to show progression
+			// =======================================================================
+
+			// about 95% progression
+
+			// // sometimes there's a block with an entrance
+			// // but no exit while mapping
+			// // fill this for now
+			// function fillHoles(boardElementID){
+			// 	console.log("fillHoles called");
+			// 	$("#"+boardElementID+" .off").each(function(){
+			// 		var x = parseInt($(this).attr("x")),
+			// 				y = parseInt($(this).attr("y"));
+			// 		var options = viewBlockMoveOptions(boardElementID,x,y);
+			// 		console.log();
+
+			// 		var n = 0;
+			// 		for (var i = 1; i <= 4; i++) {
+			// 			if(i == 1){ 
+			// 				var pos = "up";
+			// 			}else if(i == 2){
+			// 				var pos = "down";
+			// 			}else if(i == 3){
+			// 				var pos = "right";
+			// 			}else if(i == 4){
+			// 				var pos = "left";
+			// 			}else{
+			// 				continue;
+			// 			}
+			// 			if(options[pos]['moveableAmount'] == 0 && options[pos]['ranIntoStartBlock'] == false){
+			// 				n++;
+			// 			} 
+			// 		};
+			// 		if(n == 3){ //this block only has one entrance/exit, block it off for now
+			// 			// $(this).addClass("fillHole");
+			// 			console.log("fillHole options: x:"+x+"y:"+y);
+			// 			console.log(options);
+			// 			$(this).removeClass("off").addClass("map fillHole");
+			// 			// return false;
+			// 		}else if(n == 4){
+			// 			console.log("mkay fillHole->n is 4, that's a bug");
+			// 		}
+			// 	});
+			// 	console.log("fillHoles Finished")
+			// }
+
+			// // them english skills payin off arent they
+			// function mapStartToBlockHasLeftOvers(boardElementID,x,y){
+			// 	// console.log("mapFromStartToThisBlock called: x:"+x+" y:"+y);
+			// 	var totalOffBlocks = $("#"+boardElementID+" .off").length;
+			// 	var map = [];
+			// 	map.push(x+"-"+y);
+			// 	$("#"+boardElementID+"-"+x+"-"+y).addClass("map").removeClass("off");
+
+			// 	var openBlockStartPosCords = activeOpenBlockArray[boardElementID][0],
+			// 			openBlockStartPosCordsSplit = openBlockStartPosCords.split("-"),
+			// 			openBlockStart_x = parseInt(openBlockStartPosCordsSplit[0]),
+			// 			openBlockStart_y = parseInt(openBlockStartPosCordsSplit[1]);
+
+			// 	fillHoles(boardElementID);
+
+			// 	map.push(openBlockStart_x+"-"+openBlockStart_y);
+			// 	$("#"+boardElementID+"-"+openBlockStart_x+"-"+openBlockStart_y).addClass("map").removeClass("off");
+
+
+			// 	var	current_x = openBlockStart_x,
+			// 			current_y = openBlockStart_y,
+			// 			n = 0,
+			// 			totalBlocks = boardTotalBlocks(boardElementID);
+			// 	while(n <= totalBlocks){
+			// 		// console.log("while loop looking at x:"+current_x+" y:"+current_y+" n:"+n);
+			// 		var options = viewBlockMoveOptions(boardElementID,current_x,current_y);
+			// 				// console.log("options:");
+			// 				// console.log(options);
+			// 				if(options["up"]['moveableAmount'] == 0 && options["down"]['moveableAmount'] == 0 &&
+			// 					 options["right"]['moveableAmount'] == 0 && options["left"]['moveableAmount'] == 0
+			// 				){//if all options are 0 break;
+			// 					// console.log("breaking...all options are 0");
+			// 					break;
+			// 				}
+			// 		var bestMove = closestMove(options);
+			// 				// console.log("bestMove:"+bestMove);
+					
+			// 		var moveResults = moveCordsOneBlock(bestMove,current_x,current_y);
+			// 				// console.log("moveResults:");
+			// 				// console.log(moveResults);
+
+			// 		current_x = parseInt(moveResults['x']),
+			// 		current_y	= parseInt(moveResults['y']);
+			// 		// $('#'+boardElementID+" .mapActive").removeClass("mapActive").addClass("mapWasActive");
+			// 		// $('#'+boardElementID+"-"+current_x+"-"+current_y).addClass("mapActive");
+
+			// 		var indexMe = current_x+"-"+current_y,
+			// 				index = map.indexOf(indexMe);
+			// 		if(map.indexOf(indexMe) == -1){
+			// 			map.push(indexMe);
+			// 			$("#"+boardElementID+"-"+current_x+"-"+current_y).addClass("map").removeClass("off");
+			// 			// console.log("Just gave x:"+current_x+" y:"+current_y+" mapNo:"+n);
+			// 		}else{
+			// 			// console.log("mapStartToBlockHasLeftOvers() asked to index something that's already here: newIndex:"+indexMe);
+			// 			// console.log(map);
+			// 			return false;
+			// 		}
+
+					
+			// 		n++;
+			// 	}
+			// 	$('#'+boardElementID+" .map").addClass("off").removeClass("map");
+
+			// 	if(map.length != totalOffBlocks){
+			// 		console.log("HasLeftOvers: totalOffBlocks:"+totalOffBlocks+" map.length:"+map.length);
+			// 		return true;
+			// 	}
+			// 	console.log("NoLeftOvers: totalOffBlocks:"+totalOffBlocks+" map.length:"+map.length);
+			// 	return false;
+
+			// }
+
+
+
+
+			// ====
+			// from here 90%ish passrate
+			// ====
+
+			// var active_x = parseInt($("#"+boardElementID+" .active").attr('x')),
+			// 		active_y = parseInt($("#"+boardElementID+" .active").attr('y'));
+
+			// var percentage = percentageOfTheBoardTraversed(boardElementID);
+
+			// if(isThisMoveOpenOnBothSides(boardElementID,bestMove,active_x,active_y) && percentage >= .20){
+			// 	// console.log("open on both sides");
+			// 	//look for other blocks that are naked, if any other block isn't naked pick it
+			// 	var options = [];
+			// 	for (var k = 1; k <= 4; k++) {
+			// 		if(k == 1 && bestMove != "up"){
+			// 			var option = "up";
+			// 		}else if(k == 2 && bestMove != "down"){
+			// 			var option = "down";
+			// 		}else if(k == 3 && bestMove != "right"){
+			// 			var option = "right";
+			// 		}else if(k == 4 && bestMove != "left"){
+			// 			var option = "left";
+			// 		}else{
+			// 			continue;
+			// 		}
+			// 		if(moveOptions[option]['moveableAmount'] != 0 && !isThisMoveOpenOnBothSides(boardElementID,option)){
+			// 			options.push(option);
+			// 		}
+			// 	};
+			// 	if(options.length == 1){
+			// 		// console.log("changing bestMove to a closer item");
+			// 		bestMove = options[0];
+			// 	}else if(options.length == 2){
+
+			// 		if(moveOptions[options[0]]['moveableAmount'] < moveOptions[options[1]]['moveableAmount']){
+			// 			bestMove = options[0];
+			// 		}else{
+			// 			bestMove = options[1];
+			// 		}
+			// 		// console.log("rare:2 better options:pick the shorter option");
+			// 		// console.log("chosen option: "+bestMove);
+			// 	}else if(options.length == 2){
+			// 		// console.log("all options are open, do nothing");
+			// 	}
+			// 	//else everybodies naked! move on
+			// }
+
+			// ====
+			// Just this has a 25%ish passrate
+			// ====
+
+			// if(willThisMoveBlockStarter(boardElementID,bestMove)){
+			
+				// var oppDirArray = getOppositeDirections(bestMove);
+
+				// if(moveOptions[oppDirArray['opp']]['moveableAmount'] != 0){
+				// 	bestMove = oppDirArray['opp'];
+				// 	console.log("flipped:"+bestMove);
+				// }else{
+				// 	if(moveOptions[oppDirArray['od1']]['moveableAmount'] != 0 && moveOptions[oppDirArray['od2']]['moveableAmount'] != 0){
+				// 		if(moveOptions[oppDirArray['od1']]['moveableAmount'] < moveOptions[oppDirArray['od2']]['moveableAmount']){
+				// 			bestMove = oppDirArray['od1'];
+				// 			console.log("bestMove1:"+bestMove);
+				// 		}else{
+				// 			bestMove = oppDirArray['od2'];
+				// 			console.log("bestMove2:"+bestMove);
+				// 		}
+				// 	}else if(moveOptions[oppDirArray['od1']]['moveableAmount'] == 0){
+				// 		bestMove = oppDirArray['od2'];
+				// 		console.log("bestMove3:"+bestMove);
+				// 	}else if(moveOptions[oppDirArray['od2']]['moveableAmount'] == 0){
+				// 		bestMove = oppDirArray['od1'];
+				// 		console.log("bestMove4:"+bestMove);
+				// 	}
+				// }
+			// }
+
+		}
+		
+		// it should not come here, in this case it is a bug, 
+		// by moving this back here it just turns it into a crutch
+		// if(bestMove == "none"){
+		// 	bestMove = closestMove(moveOptions);
+		// 	// console.log("badMoves");
+		// 	// console.log(badMoves);
+		// 	// console.log("moveOptions");
+		// 	// console.log(moveOptions);
+		// }
+
+		moveToNext(boardElementID,bestMove);
+	};
+	spliceFinishedBoards();
+}
+
+
+
+
+// ============================================================================================
+// == thinkThank End
+// ============================================================================================
+// == Operators and inits Start
+// ============================================================================================
+
+
+
+thinkTankLoop_timer = 0;
+function thinkTankLoop(){
+	if(thinkTankLoop_timer == 0){
+		// console.log("thinkTank thinkTank think think think");
+		thinkTankLoop_timer = 1;
+		thinkTankLoop_timer = setInterval(function(){ 
+			thinkTank();
+		}, 200);
+	}else{
+		// console.log("thinkTank tired");
+		clearInterval(thinkTankLoop_timer);
+		thinkTankLoop_timer = 0;
+	}
+}
+
+
+
+
+
+
+
+activeBoards = [];
+
+var height = 8,
+		width = 8;
+
+
+// createBoard("alpha",height,width,3,2);//broken
+// createBoard("alpha",height,width,5,3);//broken
+// createBoard("alpha2",height,width,1,2);//broken
+// createBoard("alpha",height,width,4,6);//broken
+// createBoard("alpha",height,width,8,8);//crashes
+
+
+
+
+
+for (var i = 0; i < 1; i++) {
+	var foo = "place"+i;
+	createBoard(foo,height,width);
+};
+
+
+$('.board').on("click",function(){
+	if($(this).hasClass("selected")){
+		$('.board').removeClass("selected");
+		return;
+	}
+	$('.board').removeClass("selected");
+	$(this).addClass("selected");	
+});
+window.addEventListener("keydown", function(e) {
+    if([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) {
+        e.preventDefault();
+    }
+}, false);
+
+$('#new').on("click",function(){
+	$('.board').remove();
+	activeBoards = [];
+	activeOpenBlockArray = [];
+	createBoard(foo,height,width);
+});
+$('#playButton').on("click",function(){
+	thinkTankLoop();
+});
+
+$('body').on("keyup",function(e){
+	// console.log("received key: "+e.keyCode);
+	switch(e.keyCode){
+		case 32://space
+			var direction = "space";
+			break;
+		case 93://command
+			var direction = "command";
+			break;
+		case 39://right
+			var direction = "right",
+					selected = $('.selected').attr("id");
+			break;
+		case 37://left
+			var direction = "left",
+					selected = $('.selected').attr("id");
+			break;
+		case 38://up
+			var direction = "up",
+					selected = $('.selected').attr("id");
+			break;
+		case 40://down
+			var direction = "down",
+					selected = $('.selected').attr("id");
+			break;
+		default:
+			return;
+			break;
+	}
+	// console.log(direction);
+	if(direction == "command"){
+		thinkTank();
+		return;
+	}
+	if(direction == "space"){
+		thinkTankLoop();
+		return;
+	}
+	if($('.selected').length){
+		moveToNext(selected,direction);
+	}
+	
+});
+
+
+
+
+
+</script>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
