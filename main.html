@@ -618,7 +618,57 @@ function traverseAllPathsIsPossible(boardElementID,block_x,block_y){
 
 }
 
+function doHolesNeedToBeFilled(boardElementID){
+	var active_x = parseInt($("#"+boardElementID+" .active").attr("x")),
+			active_y = parseInt($("#"+boardElementID+" .active").attr("y"));
 
+	for (var i = 1; i <= 4; i++) {
+		if(i == 1){
+			var dir = "up";
+		}else if(i == 2){
+			var	dir = "down";
+		}else if(i == 3){
+			var	dir = "right";
+		}else if(i == 4){
+			var	dir = "left";
+		}else{
+			continue;
+		}
+		var cords = moveCordsOneBlock(dir,active_x,active_y),
+				cord_x = cords['x'],
+				cord_y = cords['y'];
+
+		if(blockIsOpenAndExists(boardElementID,cord_x,cord_y)){
+			var openSideBlocks = 0;
+			for (var n = 1; n <= 4; n++) {
+				if(n == 1){
+					var dir2 = "up";
+				}else if(n == 2){
+					var	dir2 = "down";
+				}else if(n == 3){
+					var	dir2 = "right";
+				}else if(n == 4){
+					var	dir2 = "left";
+				}else{
+					continue;
+				}
+				var cords = moveCordsOneBlock(dir2,cord_x,cord_y),
+						cord_x2 = cords['x'],
+						cord_y2 = cords['y'];
+
+				if(blockIsOpenAndExists(boardElementID,cord_x2,cord_y2) || 
+					(doesBlockExist(boardElementID,cord_x2,cord_y2) && blockHasClass("start",boardElementID,cord_x2,cord_y2))){
+					openSideBlocks++;
+				}
+
+			};
+			if(openSideBlocks == 1){
+				return {"boolean":true,"fillHoleSide":dir};
+			}
+		}
+	};
+	return {"boolean":false};
+}
 
 
 // ============================================================================================
@@ -628,8 +678,8 @@ function traverseAllPathsIsPossible(boardElementID,block_x,block_y){
 // ============================================================================================
 
 function thinkTank(){
-	console.log("thinkTank");
-	console.log(activeBoards);
+	// console.log("thinkTank");
+	// console.log(activeBoards);
 	if(activeBoards.length == 0){
 		clearInterval(thinkTankLoop_timer);
 		thinkTankLoop_timer = 0;
@@ -647,8 +697,9 @@ function thinkTank(){
 		var moveOptions = viewBlockMoveOptions(boardElementID,x,y);
 		
 		var bestMove = "none";
+		// if no moves, ya done
+		// if one move, it's obvious
 		if(moveOptions["legitMoves"].length == 0){
-
 			for (var i = 1; i <= 4; i++) {
 				if(i == 1){
 					var pos = "up";
@@ -670,6 +721,11 @@ function thinkTank(){
 			};
 		}else if(moveOptions["legitMoves"].length == 1){
 			bestMove = moveOptions["legitMoves"][0];
+		}
+
+		var doHolesExist = doHolesNeedToBeFilled(boardElementID);
+		if(doHolesExist['boolean']){
+			bestMove = doHolesExist['fillHoleSide'];
 		}
 
 
@@ -756,13 +812,13 @@ var height = 8,
 // createBoard("alpha",height,width,5,3);//broken
 // createBoard("alpha2",height,width,1,2);//broken
 // createBoard("alpha",height,width,4,6);//broken
-// createBoard("alpha",height,width,8,8);//crashes
+createBoard("alpha",height,width,3,8);//crashes
 
 
-for (var i = 0; i < 1; i++) {
-	var foo = "place"+i;
-	createBoard(foo,height,width);
-};
+// for (var i = 0; i < 1; i++) {
+// 	var foo = "place"+i;
+// 	createBoard(foo,height,width);
+// };
 
 
 $(document).on("click",'.board',function(){
