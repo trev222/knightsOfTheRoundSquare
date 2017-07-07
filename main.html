@@ -258,9 +258,6 @@ function isNextToActiveBlock(boardElementID,x,y){
 
 
 function viewBlockMoveOptions(boardElementID,x,y){
-
-	// console.log("viewBlockMoveOptions x:"+x+" y:"+y);
-
 	var data = [];
 	data["legitMoves"] = []; 
 	for (var i = 0; i < 4; i++) {
@@ -344,13 +341,10 @@ function moveCordsOneBlock(dir,x,y){
 	}else{
 		console.log("moveCordsDirection() direction not recognized: "+dir);
 	}
-	// console.log("moveCordsOneBlock() dir:"+dir);
 	return {"x":x,"y":y};
 }
 
 function getOppositeDirections(dir){
-	// console.log("getOppositeDirections");
-	// console.log("dir:"+dir);
 	if(dir == "up"){
 		var opp = "down",od1 = "right",od2 = "left";
 	}else if(dir == "down"){
@@ -362,7 +356,6 @@ function getOppositeDirections(dir){
 	}else{
 		console.log("getOppositeDirections() direction not recognized: "+dir); return	false;
 	}
-	// console.log("opp:"+opp);
 	return {"opp":opp,"od1":od1,"od2":od2};
 }
 
@@ -596,9 +589,8 @@ function traverseAllPathsIsPossible(boardElementID,block_x,block_y){
 						bottom_y = cord_y2+1,
 						right_x = cord_x2+1,
 						left_x = cord_x2-1;
+
 				//top//bottom//right//left
-
-
 				if(blockIsOpenAndExists(boardElementID,cord_x2,top_y) && blockIsOpenAndExists(boardElementID,cord_x2,bottom_y) &&
 					!blockIsOpenAndExists(boardElementID,right_x,cord_y2) && !blockIsOpenAndExists(boardElementID,left_x,cord_y2)
 					){
@@ -622,7 +614,6 @@ function traverseAllPathsIsPossible(boardElementID,block_x,block_y){
 	$("#"+boardElementID+" .traversedBlock").removeClass("traversedBlock");
 
 	
-	console.log("willThisBlockCloseOffStarter: boolean:"+isPossible+" openOn:"+openOn);
 	return {"boolean":isPossible,"openOn":openOn};
 
 }
@@ -637,8 +628,6 @@ function traverseAllPathsIsPossible(boardElementID,block_x,block_y){
 // ============================================================================================
 
 function thinkTank(){
-	console.log("thinkTank");
-	console.log(activeBoards);
 	if(activeBoards.length == 0){
 		clearInterval(thinkTankLoop_timer);
 		thinkTankLoop_timer = 0;
@@ -653,8 +642,6 @@ function thinkTank(){
 				y = parseInt($('#'+boardElementID+" .active").attr('y'));
 
 		
-
-
 		var moveOptions = viewBlockMoveOptions(boardElementID,x,y);
 		
 		var bestMove = "none";
@@ -752,13 +739,11 @@ function thinkTank(){
 thinkTankLoop_timer = 0;
 function thinkTankLoop(){
 	if(thinkTankLoop_timer == 0){
-		// console.log("thinkTank thinkTank think think think");
 		thinkTankLoop_timer = 1;
 		thinkTankLoop_timer = setInterval(function(){ 
 			thinkTank();
 		}, 200);
 	}else{
-		// console.log("thinkTank tired");
 		clearInterval(thinkTankLoop_timer);
 		thinkTankLoop_timer = 0;
 	}
@@ -841,7 +826,6 @@ $('body').on("keyup",function(e){
 			return;
 			break;
 	}
-	// console.log(direction);
 	if(direction == "command"){
 		thinkTank();
 		return;
@@ -862,7 +846,6 @@ $('body').on("keyup",function(e){
 
 </script>
 </html>
-
 
 
 
