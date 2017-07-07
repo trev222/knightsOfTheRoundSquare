@@ -10,3 +10,6 @@
 
 #### You can view main.html for a working example (since it's in jQuery it pretty heavy)
 #### If you want to try it out on your own you can download baseTemplate.html which gives you the grid and a couple other useful functions but leaves the logic entirely up to you.
+
+Check it out
+https://jsfiddle.net/hy2etufr/12/
