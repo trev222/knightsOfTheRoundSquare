@@ -1,12 +1,8 @@
 <!DOCTYPE html>
 <head>
 	<title>Knights of the round square</title>
-
 	<script type="text/javascript" src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
 </head>
-
-
-
 <style type="text/css">
 	*{
 		margin: 0px;padding: 0px;
@@ -315,12 +311,6 @@ function viewBlockMoveOptions(boardElementID,x,y){
 			}			
 			data[pos]['moveableAmount']++;
 			checkPos += cordIncrementor;
-
-			if(n >= 100){
-				console.log("n is too long, increase if this is not an error: "+n);
-				break;
-			}
-			n++;
 		}	
 		if(data[pos]['moveableAmount'] >= 1){
 			data["legitMoves"].push(pos);
@@ -888,26 +878,6 @@ $('body').on("keyup",function(e){
 	}
 	
 });
-
-
-
-
-
-</script>
-</html>
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 </script>
 </html>
