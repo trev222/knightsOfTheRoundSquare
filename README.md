@@ -12,4 +12,6 @@
 #### If you want to try it out on your own you can download baseTemplate.html which gives you the grid and a couple other useful functions but leaves the logic entirely up to you.
 
 Check it out
-https://jsfiddle.net/hy2etufr/12/
+https://jsfiddle.net/hy2etufr/13/
+
+So far I think only 3,8 doesn't work
