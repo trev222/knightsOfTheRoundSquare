@@ -11,7 +11,7 @@
 #### You can view main.html for a working example (since it's in jQuery it pretty heavy)
 #### If you want to try it out on your own you can download baseTemplate.html which gives you the grid and a couple other useful functions but leaves the logic entirely up to you.
 
-#Legend
+# Legend
 1. Space bar - start/stop
 2. Right command key - do one rotation
 3. Click on board, make sure it is yellow. Use arrow keys to manually move the position.
