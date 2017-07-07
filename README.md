@@ -12,6 +12,9 @@
 #### If you want to try it out on your own you can download baseTemplate.html which gives you the grid and a couple other useful functions but leaves the logic entirely up to you.
 
 Check it out
-https://jsfiddle.net/hy2etufr/13/
+https://jsfiddle.net/hy2etufr/14/
 
-So far I think only 3,8 doesn't work
+If you see any that don't work, let me know.
+Also, for fun, try to break it yourself. Be fair and give it a solvable solution though xD
+
+Actually, if 2 or more of the start block sides are open I think it is pretty easy to break.
