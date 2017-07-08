@@ -756,8 +756,16 @@ function thinkTank(){
 					}
 
 					if(moveOptions['legitMoves'].indexOf(openOn) != -1){
-						bestMove = openOn;
-						break;
+						var cords = moveCordsOneBlock(openOn,active_x,active_y),
+								x = parseInt(cords['x']),
+								y = parseInt(cords['y']);
+
+						var res2 = traverseAllPathsIsPossible(boardElementID,x,y);
+						if(res2['boolean']){
+							bestMove = openOn;
+							break;
+						}
+						
 					}
 				}else{
 					bestMoveToPickFromArray.push(pos);
@@ -811,13 +819,13 @@ activeBoards = [];
 CONSTANT_height = 8,
 CONSTANT_width = 8,
 CONSTANT_loopSpeed = 50,//200 default
-CONSTANT_boardsToCreate = 5;
+CONSTANT_boardsToCreate = 1;
 
 
 // createBoard("alpha",CONSTANT_height,CONSTANT_width,5,3);//broken
 // createBoard("alpha2",CONSTANT_height,CONSTANT_width,1,2);//broken
 // createBoard("alpha",CONSTANT_height,CONSTANT_width,7,5);//broken
-// createBoard("alpha",CONSTANT_height,CONSTANT_width);//crashes
+// createBoard("alpha",CONSTANT_height,CONSTANT_width,7,1);//crashes
 
 
 for (var i = 0; i < CONSTANT_boardsToCreate; i++) {
