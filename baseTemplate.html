@@ -157,11 +157,6 @@ function moveToNext(boardElementID,direction,userTouched){
 		case "left": x--;break;
 		default:console.log("moveToNext(): direction not recognized: "+direction);break;
 	}
-	var removeFromActiveArray = x+"-"+y,
-			removeFromActiveArrayIndex = activeOpenBlockArray[boardElementID].indexOf(removeFromActiveArray);
-	if(removeFromActiveArrayIndex != -1){
-		activeOpenBlockArray[boardElementID].splice(removeFromActiveArrayIndex,1);
-	}
 
 
 
@@ -526,7 +521,6 @@ $('body').on("keyup",function(e){
 
 </script>
 </html>
-
 
 
 
