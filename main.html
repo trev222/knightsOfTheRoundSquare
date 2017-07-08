@@ -591,14 +591,12 @@ function traverseAllPathsIsPossible(boardElementID,block_x,block_y){
 					!blockIsOpenAndExists(boardElementID,right_x,cord_y2) && !blockIsOpenAndExists(boardElementID,left_x,cord_y2)
 					){
 					continue;
-				}else{
 				}
 				//right//left//top//bottom
 				if(blockIsOpenAndExists(boardElementID,right_x,cord_y2) && blockIsOpenAndExists(boardElementID,left_x,cord_y2) &&
 					!blockIsOpenAndExists(boardElementID,cord_x2,top_y) && !blockIsOpenAndExists(boardElementID,cord_x2,bottom_y)
 					){
 					continue;
-				}else{
 				}
 
 				openOn = dir;
@@ -808,13 +806,13 @@ var height = 8,
 // createBoard("alpha",height,width,5,3);//broken
 // createBoard("alpha2",height,width,1,2);//broken
 // createBoard("alpha",height,width,4,6);//broken
-// createBoard("alpha",height,width,3,8);//crashes
+createBoard("alpha",height,width,1,1);//crashes
 
 
-for (var i = 0; i < 1; i++) {
-	var foo = "place"+i;
-	createBoard(foo,height,width);
-};
+// for (var i = 0; i < 1; i++) {
+// 	var foo = "place"+i;
+// 	createBoard(foo,height,width);
+// };
 
 
 $(document).on("click",'.board',function(){
