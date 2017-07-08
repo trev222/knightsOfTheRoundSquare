@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <head>
 	<title>Knights of the round square</title>
-
-	<script type="text/javascript" src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+	<script
+	  src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+	  integrity="sha256-k2WSCIexGzOj3Euiig+TlR8gA0EmPjuc79OEeY5L45g="
+	  crossorigin="anonymous"></script>
 </head>
 
 
@@ -68,8 +70,16 @@
 <body>
 	<button id="new">new</button>
 	<button id="playButton">start/stop</button>
-	
-
+	<!-- 
+	Keep in mind, this is JavaScript. 
+	High numbers will crash your browser. 
+	-->
+	<ul style="display:none;">
+		<li class="easyVar height">8</li><!--8-->
+		<li class="easyVar width">8</li><!--8-->
+		<li class="easyVar speed">50</li><!--50-->
+		<li class="easyVar boards">1</li><!--1-->
+	</ul>
 </body>
 
 
@@ -432,19 +442,20 @@ function thinkTankLoop(){
 
 activeBoards = [];
 
-var height = 8,
-		width = 8;
+CONSTANT_height = parseInt($('.easyVar.height').text()),
+CONSTANT_width = parseInt($('.easyVar.width').text()),
+CONSTANT_loopSpeed = parseInt($('.easyVar.speed').text()),
+CONSTANT_boardsToCreate = parseInt($('.easyVar.boards').text());
+
+// createBoard("alpha",height,width,1,2);
+// createBoard("alpha2",height,width,3,4);
+// createBoard("alpha3",height,width);
+// createBoard("alpha4",height,width);
 
 
-// createBoard("alpha",height,width,5,3);//broken
-// createBoard("alpha2",height,width,1,2);//broken
-// createBoard("alpha",height,width,4,6);//broken
-// createBoard("alpha",height,width,8,8);//crashes
-
-
-for (var i = 0; i < 1; i++) {
+for (var i = 0; i < CONSTANT_boardsToCreate; i++) {
 	var foo = "place"+i;
-	createBoard(foo,height,width);
+	createBoard(foo,CONSTANT_height,CONSTANT_width);
 };
 
 
@@ -465,7 +476,10 @@ window.addEventListener("keydown", function(e) {
 $('#new').on("click",function(){
 	$('.board').remove();
 	activeBoards = [];
-	createBoard(foo,height,width);
+	for (var i = 0; i < CONSTANT_boardsToCreate; i++) {
+		var foo = "place"+i;
+		createBoard(foo,CONSTANT_height,CONSTANT_width);
+	};
 });
 $('#playButton').on("click",function(){
 	thinkTankLoop();
