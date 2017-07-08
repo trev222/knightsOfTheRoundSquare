@@ -1,4 +1,4 @@
-# knightsRoaming https://jsfiddle.net/hy2etufr/17/
+# knightsRoaming https://jsfiddle.net/hy2etufr/20/
 
 
 #### Just a fun challenge I read about on Quora.
