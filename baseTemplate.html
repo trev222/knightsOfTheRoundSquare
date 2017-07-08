@@ -416,7 +416,7 @@ function thinkTankLoop(){
 		thinkTankLoop_timer = 1;
 		thinkTankLoop_timer = setInterval(function(){ 
 			thinkTank();
-		}, 200);
+		}, 50);
 	}else{
 		console.log("thinkTank tired");
 		clearInterval(thinkTankLoop_timer);
