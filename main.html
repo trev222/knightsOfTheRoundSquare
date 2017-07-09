@@ -153,23 +153,28 @@ function chooseStart(boardElementID,height,width,x,y){
 function createActiveOpenBlockArray(boardElementID,x,y){
 	activeOpenBlockArray[boardElementID] = [];
 
-	var top_y = y-1;
-	if($("#"+boardElementID+"-"+x+"-"+top_y).length){
-		activeOpenBlockArray[boardElementID].push(x+"-"+top_y);
-	}
-	var bottom_y = y+1;
-	if($("#"+boardElementID+"-"+x+"-"+bottom_y).length){
-		activeOpenBlockArray[boardElementID].push(x+"-"+bottom_y);
-	}
-	var right_x = x+1;
-	if($("#"+boardElementID+"-"+right_x+"-"+y).length){
-		activeOpenBlockArray[boardElementID].push(right_x+"-"+y);
-	}
-	var left_x = x-1;
-	if($("#"+boardElementID+"-"+left_x+"-"+y).length){
-		activeOpenBlockArray[boardElementID].push(left_x+"-"+y);
-	}
-	
+	var temp_x = 0,temp_y = 0;
+
+	for (var i = 1; i <= 4; i++) {
+		if(i == 1){//up
+			temp_x = x,
+			temp_y = y-1;
+		}else if(i == 2){//down
+			temp_x = x,
+			temp_y = y+1;
+		}else if(i == 3){//right
+			temp_x = x+1,
+			temp_y = y;
+		}else if(i == 4){//left
+			temp_x = x-1,
+			temp_y = y;
+		}else{
+			continue;
+		}
+		if(doesBlockExist(boardElementID,temp_x,temp_y)){
+			activeOpenBlockArray[boardElementID].push(temp_x+"-"+temp_y);
+		}
+	};	
 }
 
 
