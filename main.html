@@ -72,8 +72,8 @@
 	High numbers will crash your browser. 
 	-->
 	<ul style="display:none;">
-		<li class="easyVar height">16</li><!--8-->
-		<li class="easyVar width">16</li><!--8-->
+		<li class="easyVar height">8</li><!--8-->
+		<li class="easyVar width">8</li><!--8-->
 		<li class="easyVar speed">25</li><!--50-->
 		<li class="easyVar boards">1</li><!--1-->
 	</ul>
@@ -819,14 +819,14 @@ CONSTANT_boardsToCreate = parseInt($('.easyVar.boards').text());
 
 // createBoard("alpha",CONSTANT_height,CONSTANT_width,5,3);//broken
 // createBoard("alpha2",CONSTANT_height,CONSTANT_width,1,2);//broken
-createBoard("alpha",CONSTANT_height,CONSTANT_width,4,3);//broken
+// createBoard("alpha",CONSTANT_height,CONSTANT_width,4,3);//broken
 // createBoard("alpha",CONSTANT_height,CONSTANT_width,17,18);//crashes
 
 
-// for (var i = 0; i < CONSTANT_boardsToCreate; i++) {
-// 	var foo = "place"+i;
-// 	createBoard(foo,CONSTANT_height,CONSTANT_width);
-// };
+for (var i = 0; i < CONSTANT_boardsToCreate; i++) {
+	var foo = "place"+i;
+	createBoard(foo,CONSTANT_height,CONSTANT_width);
+};
 
 
 $(document).on("click",'.board',function(){
