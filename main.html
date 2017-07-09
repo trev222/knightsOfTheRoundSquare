@@ -72,9 +72,9 @@
 	High numbers will crash your browser. 
 	-->
 	<ul style="display:none;">
-		<li class="easyVar height">8</li><!--8-->
-		<li class="easyVar width">8</li><!--8-->
-		<li class="easyVar speed">50</li><!--50-->
+		<li class="easyVar height">16</li><!--8-->
+		<li class="easyVar width">16</li><!--8-->
+		<li class="easyVar speed">25</li><!--50-->
 		<li class="easyVar boards">1</li><!--1-->
 	</ul>
 
@@ -186,8 +186,8 @@ function moveToNext(boardElementID,direction,userTouched){
 		}
 	}
 
-	var x = $('#'+boardElementID+' .active').attr('x'),
-			y = $('#'+boardElementID+' .active').attr('y');
+	var x = parseInt($('#'+boardElementID+' .active').attr('x')),
+			y = parseInt($('#'+boardElementID+' .active').attr('y'));
 
 	switch(direction){
 		case "up": y--;break;
@@ -205,16 +205,22 @@ function moveToNext(boardElementID,direction,userTouched){
 
 
 	moveToThisElement = '#'+boardElementID+'-'+x+'-'+y;
-	if(!$(moveToThisElement).length){
-		console.log("moveToNext(): asked to move to this element but it doesn't exist: "+moveToThisElement);
-		boardFinished(boardElementID);
+
+	if(!doesBlockExist(boardElementID,x,y)){
+		
+		if(userTouched == 1){
+			console.log("You can't move there because that block doesn't exist.");
+		}else{
+			console.log("moveToNext(): asked to move to this element but it doesn't exist: "+moveToThisElement);
+			boardFinished(boardElementID);
+		}
 		return;
 	}
-	if($(moveToThisElement).hasClass("on")){
+	if(blockHasClass("on",boardElementID,x,y)){		
 		$(moveToThisElement).addClass("beenHereAlready");
 		boardFinished(boardElementID);
 	}
-	if($(moveToThisElement).hasClass("start")){
+	if(blockHasClass("start",boardElementID,x,y)){
 		boardFinished(boardElementID);
 	}
 
@@ -285,19 +291,27 @@ function viewBlockMoveOptions(boardElementID,x,y){
 	for (var i = 0; i < 4; i++) {
 		switch (i){
 			case 0://up
-				var pos = "up", cord = y,
+				var pos = "up", 
+						cord_y = y-1,
+						cord_x = x,
 						cordIncrementor = -1;
 				break;
 			case 1://down
-				var pos = "down", cord = y,
+				var pos = "down", 
+						cord_y = y+1,
+						cord_x = x,
 						cordIncrementor = 1;
 				break;	
 			case 2://right
-				var pos = "right"; cord = x,
+				var pos = "right"; 
+						cord_y = y,
+						cord_x = x+1,
 						cordIncrementor = 1;
 				break;
 			case 3://left
-				var pos = "left"; cord = x,
+				var pos = "left"; 
+						cord_y = y,
+						cord_x = x-1,
 						cordIncrementor = -1;
 				break;
 			default:
@@ -307,36 +321,24 @@ function viewBlockMoveOptions(boardElementID,x,y){
 		data[pos] = []; 
 		data[pos]['moveableAmount'] = 0;
 		data[pos]['ranIntoStartBlock'] = false;
-		var checkPos = cord+cordIncrementor;
 		
 		n = 0; 
 		max = maxMoveRange(boardElementID);
 		while(n <= max){
-			if(i == 0 || i == 1){//up or down
-				if(!blockIsOpenAndExists(boardElementID,x,checkPos) && 
-					!blockHasClass("traversedBlock",boardElementID,x,checkPos))
+			if(!blockIsOpenAndExists(boardElementID,cord_x,cord_y) && 
+					!blockHasClass("traversedBlock",boardElementID,cord_x,cord_y))
 				{
-
-					if(blockHasClass("start",boardElementID,x,checkPos)){
+					if(blockHasClass("start",boardElementID,cord_x,cord_y)){
 						data[pos]['ranIntoStartBlock'] = true;
 					}
-					
 					break;
-				}
-			}else{//right or left
-				if(!blockIsOpenAndExists(boardElementID,checkPos,y) &&
-					!blockHasClass("traversedBlock",boardElementID,checkPos,x))
-				{
-
-					if(blockHasClass("start",boardElementID,checkPos,y)){
-						data[pos]['ranIntoStartBlock'] = true;
-					}
-					
-					break;
-				}
-			}			
+				}		
 			data[pos]['moveableAmount']++;
-			checkPos += cordIncrementor;
+			if(i == 0 || i == 1){//up//down
+				cord_y += cordIncrementor;
+			}else{//right//left
+				cord_x += cordIncrementor;
+			}
 		}	
 		if(data[pos]['moveableAmount'] >= 1){
 			data["legitMoves"].push(pos);
@@ -439,53 +441,24 @@ function closestMove(movesArray,allowedMoves){
 	return bestMove;
 }
 
-function isThisMoveOpenOnBothSides(boardElementID,dir,cur_x,cur_y){
-	
-	var nextMoveCords = moveCordsOneBlock(dir,cur_x,cur_y);
 
-	var oppDirs = getOppositeDirections(dir);
-
-	var od1_cords = moveCordsOneBlock(oppDirs['od1'],nextMoveCords['x'],nextMoveCords['y']);
-	var od2_cords = moveCordsOneBlock(oppDirs['od2'],nextMoveCords['x'],nextMoveCords['y']);
-
-	if(blockIsOpenAndExists(boardElementID,od1_cords["x"],od1_cords["y"]) &&
-		blockIsOpenAndExists(boardElementID,od2_cords["x"],od2_cords["y"])){
-		return true;
-	}
-	return false;
-}
-
-
-function startBlockIsTouchingATraverseBlockButNotThisBlock(boardElementID,x,y){
-	var start_x = parseInt($("#"+boardElementID+" .start").attr("x")),
-			start_y = parseInt($("#"+boardElementID+" .start").attr("y"));
-
-	for (var i = 1; i < 4; i++) {
-		if(i == 1){
-			var dir = "up";
-		}else if(i == 2){
-			var dir = "down";
-		}else if(i == 3){
-			var dir = "right";
-		}else if(i == 4){
-			var dir = "left";
-		}else{
-			continue;
-		}
-		var cords = moveCordsOneBlock(dir,start_x,start_y),
-				cord_x = parseInt(cords['x']),
-				cord_y = parseInt(cords['y']);
-		
-		if(doesBlockExist(boardElementID,cord_x,cord_y) && 
-			blockHasClass("traversedBlock",boardElementID,cord_x,cord_y) && 
-			(cord_x == x && cord_y == y) )
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
+// ===================
+// The main brain
+// ===================
+// -- takes a block, checks if it will block path to start
+// 
+// 1. from the start block, goes through each off block, 
+// 		instead of one at a time, it spreads
+//  	after it can no longer spread, it checks to see if it was able to
+//  	spread to every block
+// 2. if so return true
+// 3. else return false and which side the block was open on
+// 	- while this breaks some of the bigger boards, it fixes a lot more than it breaks
+// =============================
+// Ideas to fix bigger boards
+// - to fix this, you would need to make it so that traverse does not spread, 
+// - but instead can only move in one direction, 
+// - which is doable but would probably increase processing times by 2
 function traverseAllPathsIsPossible(boardElementID,block_x,block_y){
 
 	var isPossible = false,
@@ -755,8 +728,9 @@ function thinkTank(){
 			var active_x = parseInt($("#"+boardElementID+" .active").attr('x')),
 					active_y = parseInt($("#"+boardElementID+" .active").attr('y'));
 
-			for (var i = 0; i < moveOptions['legitMoves'].length; i++) {
-				var pos = moveOptions['legitMoves'][i];
+			// for (var i = 0; i < moveOptions['legitMoves'].length; i++) {
+			while(moveOptions['legitMoves'].length >= 1){
+				var pos = moveOptions['legitMoves'][0];
 
 
 				var cords = moveCordsOneBlock(pos,active_x,active_y),
@@ -772,7 +746,8 @@ function thinkTank(){
 								openOn = opposites['opp'];
 					}
 
-					if(moveOptions['legitMoves'].indexOf(openOn) != -1){
+					var openOnIndex = moveOptions['legitMoves'].indexOf(openOn);
+					if(openOnIndex != -1){
 						var cords = moveCordsOneBlock(openOn,active_x,active_y),
 								x = parseInt(cords['x']),
 								y = parseInt(cords['y']);
@@ -781,12 +756,15 @@ function thinkTank(){
 						if(res2['boolean']){
 							bestMove = openOn;
 							break;
+						}else{
+							moveOptions['legitMoves'].splice(openOnIndex,1);
 						}
 						
 					}
 				}else{
 					bestMoveToPickFromArray.push(pos);
 				}
+				moveOptions['legitMoves'].shift();
 			};
 
 			if(bestMove == "none"){
@@ -841,14 +819,14 @@ CONSTANT_boardsToCreate = parseInt($('.easyVar.boards').text());
 
 // createBoard("alpha",CONSTANT_height,CONSTANT_width,5,3);//broken
 // createBoard("alpha2",CONSTANT_height,CONSTANT_width,1,2);//broken
-// createBoard("alpha",CONSTANT_height,CONSTANT_width,7,5);//broken
-// createBoard("alpha",CONSTANT_height,CONSTANT_width,7,1);//crashes
+createBoard("alpha",CONSTANT_height,CONSTANT_width,4,3);//broken
+// createBoard("alpha",CONSTANT_height,CONSTANT_width,17,18);//crashes
 
 
-for (var i = 0; i < CONSTANT_boardsToCreate; i++) {
-	var foo = "place"+i;
-	createBoard(foo,CONSTANT_height,CONSTANT_width);
-};
+// for (var i = 0; i < CONSTANT_boardsToCreate; i++) {
+// 	var foo = "place"+i;
+// 	createBoard(foo,CONSTANT_height,CONSTANT_width);
+// };
 
 
 $(document).on("click",'.board',function(){
