@@ -72,8 +72,8 @@
 	High numbers will crash your browser. 
 	-->
 	<ul style="display:none;">
-		<li class="easyVar height">8</li><!--8-->
-		<li class="easyVar width">8</li><!--8-->
+		<li class="easyVar height">12</li><!--8-->
+		<li class="easyVar width">12</li><!--8-->
 		<li class="easyVar speed">25</li><!--50-->
 		<li class="easyVar boards">1</li><!--1-->
 	</ul>
@@ -285,7 +285,7 @@ function isNextToActiveBlock(boardElementID,x,y){
 
 
 
-function viewBlockMoveOptions(boardElementID,x,y){
+function viewBlockMoveOptions(boardElementID,x,y,justLegitMoves){
 	var data = [];
 	data["legitMoves"] = []; 
 	for (var i = 0; i < 4; i++) {
@@ -342,22 +342,26 @@ function viewBlockMoveOptions(boardElementID,x,y){
 		}	
 		if(data[pos]['moveableAmount'] >= 1){
 			data["legitMoves"].push(pos);
+			if(justLegitMoves == 1){
+				continue;
+			}
 		}
+		
 	};
 	return data;
 }
 
 function moveCordsOneBlock(dir,x,y){
-	if(dir == "up"){
+	if(dir == "up"){ 
 		y--;
-	}else if(dir == "down"){
+	}else if(dir == "down"){ 
 		y++;
-	}else if(dir == "right"){
+	}else if(dir == "right"){ 
 		x++;
-	}else if(dir == "left"){
+	}else if(dir == "left"){ 
 		x--;
 	}else{
-		console.log("moveCordsDirection() direction not recognized: "+dir);
+		console.log("moveCordsOneBlock() direction not recognized: "+dir);
 	}
 	return {"x":x,"y":y};
 }
@@ -663,6 +667,124 @@ function doHolesNeedToBeFilled(boardElementID){
 }
 
 
+// there's something wrong with this, will check it out later
+function willThisBlockCreateA2x2Trap(boardElementID,block_x,block_y){
+	var moveOptions = viewBlockMoveOptions(boardElementID,block_x,block_y,1);
+	for (var i = 0; i < moveOptions['legitMoves'].length; i++) {
+		var twoByTwoArea = [];
+
+		var move = moveOptions['legitMoves'][i],
+				opposites1 = getOppositeDirections(move),
+				cords1 = moveCordsOneBlock(move,block_x,block_y),
+				cords1_x = cords1['x'],
+				cords1_y = cords1['y'],
+				cords1MoveOptions = viewBlockMoveOptions(boardElementID,cords_x,cords1_y,1);
+
+		twoByTwoArea["center1"] = {"x":cords1_x,"y":cords1_y};
+
+		if(cords1MoveOptions['legitMoves'].indexOf(move) == -1 ||
+			(cords1MoveOptions['legitMoves'].indexOf(opposites1['od1']) == -1 && 
+				cords1MoveOptions['legitMoves'].indexOf(opposites1['od2']) == -1))
+		{ 
+			continue;//it's not possible for this to create a hole 
+		}
+		// second moves from block
+		for (var n = 0; n < cords1MoveOptions['legitMoves'].length; n++) {
+			var cords1Move = cords1MoveOptions['legitMoves'][n],
+					cords2 = moveCordsOneBlock(cords1Move,cords1_x,cords1_y),
+					cords2_x = cords2['x'],
+					cords2_y = cords2['y'];
+			
+			// third moves form block
+			if(cords1Move == move){
+				twoByTwoArea["center2"] = {"x":cords2_x,"y":cords2_y};//possible to add 1 block
+			}else{
+				var cords3 = moveCordsOneBlock(cords1Move,cords2_x,cords2_y),
+						cords3_x = cords2['x'],
+						cords3_y = cords2['y'];
+				if(blockIsOpenAndExists(boardElementID,cords3_x,cords3_y)){
+					if(twoByTwoArea["side1"] == undefined){
+						twoByTwoArea["side1"] = {"x":cords2_x,"y":cords2_y};
+						twoByTwoArea["side2"] = {"x":cords3_x,"y":cords3_y};
+					}else{
+						twoByTwoArea["third1"] = {"x":cords2_x,"y":cords2_y};
+						twoByTwoArea["third2"] = {"x":cords3_x,"y":cords3_y};
+					}
+					continue;
+				}
+			}
+		};
+
+		if(twoByTwoArea.length == 6 || twoByTwoArea.length <= 3){
+			continue;
+		}
+		console.log("we've got a live one");
+		console.log(twoByTwoArea);
+
+		var openSides = [];
+		for (var m = 1; m <= 4; m++) {
+			if(m == 1){
+				var pos = "center1";
+			}else if(m == 2){
+				var pos = "center2";
+			}else if(m == 3){
+				var pos = "side1";
+			}else if(m == 4){
+				var pos = "side2";
+			}else{ continue; }
+			openSides[pos] = "closed";
+
+			for (var v = 1; v <= 4; v++) {
+				if(v == 1){
+					var move = "up";
+				}else if(v == 2){
+					var move = "down";
+				}else if(v == 3){
+					var move = "right";
+				}else if(v == 4){
+					var move = "left";
+				}else{continue;}
+				var cords4_x = twoByTwoArea[pos]['x'],
+						cords4_y = twoByTwoArea[pos]['y'],
+						cords5 = moveCordsOneBlock(cords1Move,cords4_x,cords4_y),
+						cords5_x = cords5['x'],
+						cords5_y = cords5['y'];
+
+				if( (cords5_x == twoByTwoArea["center1"]['x'] && cords5_y == twoByTwoArea["center1"]['y']) ||
+						(cords5_x == twoByTwoArea["center2"]['x'] && cords5_y == twoByTwoArea["center2"]['y']) ||
+						(cords5_x == twoByTwoArea["side1"]['x'] && cords5_y == twoByTwoArea["side1"]['y']) ||
+						(cords5_x == twoByTwoArea["side2"]['x'] && cords5_y == twoByTwoArea["side2"]['y']) 
+					)
+				{
+					continue;
+				}
+				if(doesBlockExist(boardElementID,cords5_x,cords5_y) &&
+						(blockHasClass(className,boardElementID,cords5_x,cords5_y) || blockHasClass(className,boardElementID,cords5_x,cords5_y))
+					)
+				{
+					openSides[pos] = "open";
+					break;
+				}
+			};
+
+			if( (openSides['center1'] == "open" && openSides['center2'] == "closed" && openSides['side1'] == "closed") ||
+					(openSides['center2'] == "open" && openSides['center1'] == "closed" && openSides['side2'] == "closed") ||
+					(openSides['side1'] == "open" && openSides['center1'] == "closed" && openSides['side2'] == "closed") ||
+					(openSides['side2'] == "open" && openSides['center2'] == "closed" && openSides['side1'] == "closed")
+				)
+			{
+				console.log("willThisBlockCreateA2x2Trap: true");
+				return {"boolean":true};
+			}
+
+		};
+	};
+
+	console.log("willThisBlockCreateA2x2Trap: false");
+	return {"boolean":false};
+
+}
+
 
 // ============================================================================================
 // == thinkTankBrainFood End
@@ -721,15 +843,44 @@ function thinkTank(){
 			bestMove = doHolesExist['fillHoleSide'];
 		}
 
+		// // will this move make a trap
+		// console.log("trap before if");
+		// console.log("bestMove:"+bestMove);
+		// if(bestMove == "none"){
+		// 	for (var i = 0; i < moveOptions['legitMoves'].length; i++) {
+		// 		var move = moveOptions['legitMoves'][i];
+		// 		console.log("move:"+move);
+		// 		var cords = moveCordsOneBlock(move,x,y),
+		// 				cord_x = cords['x'],
+		// 				cord_y = cords['y'];
+		// 				console.log("cord_x:"+cord_x+" cord_y:"+cord_y);
 
+		// 		console.log("checking trap");
+		// 		var res = willThisBlockCreateA2x2Trap(boardElementID,cord_x,cord_y);
+		// 		console.log("trap check ended");
+		// 		console.log(res['boolean']);
+		// 		if(res['boolean'] == true){
+		// 			var index = moveOptions['legitMoves'].indexOf(move);
+		// 			if(index != -1){
+		// 				moveOptions['legitMoves'].splice(index,1);
+		// 				i = i-1;
+		// 			}
+		// 		}
+		// 	};
+		// }
+
+
+		//traversable
 		if(bestMove == "none"){
-			var bestMoveToPickFromArray = [];
+			var traversableMovesArray = [];
 
 			var active_x = parseInt($("#"+boardElementID+" .active").attr('x')),
 					active_y = parseInt($("#"+boardElementID+" .active").attr('y'));
 
 			// for (var i = 0; i < moveOptions['legitMoves'].length; i++) {
 			while(moveOptions['legitMoves'].length >= 1){
+				console.log("moveOptions");
+				console.log(moveOptions['legitMoves']);
 				var pos = moveOptions['legitMoves'][0];
 
 
@@ -740,35 +891,53 @@ function thinkTank(){
 				var result = traverseAllPathsIsPossible(boardElementID,x,y);
 				if(result['boolean'] == false){//openOn
 					var openOn = result['openOn'];
-					
+					console.log("openOn:"+openOn);
+
+
 					if(openOn == "opposite"){
 						var opposites = getOppositeDirections(pos),
 								openOn = opposites['opp'];
 					}
-
-					var openOnIndex = moveOptions['legitMoves'].indexOf(openOn);
-					if(openOnIndex != -1){
+					
+					console.log("openOn:"+openOn);
+					
+					console.log("moveOptions");
+					console.log(moveOptions['legitMoves']);
+					console.log("openOnIndex:"+openOnIndex);
+					if(openOn != "null"){
+						console.log("checking openOn");
 						var cords = moveCordsOneBlock(openOn,active_x,active_y),
 								x = parseInt(cords['x']),
 								y = parseInt(cords['y']);
 
-						var res2 = traverseAllPathsIsPossible(boardElementID,x,y);
-						if(res2['boolean']){
+						var result2 = traverseAllPathsIsPossible(boardElementID,x,y);
+						if(result2['boolean'] == true){
+							console.log("openOn was true");
 							bestMove = openOn;
 							break;
 						}else{
-							moveOptions['legitMoves'].splice(openOnIndex,1);
+							var openOnIndex = moveOptions['legitMoves'].indexOf(openOn);
+							console.log("openOn was false");
+							if(openOnIndex != -1){
+								console.log("splicing :"+pos);
+								moveOptions['legitMoves'].splice(openOnIndex,1);
+								if(openOnIndex == 0){
+									continue;
+								}
+							}
 						}
-						
 					}
 				}else{
-					bestMoveToPickFromArray.push(pos);
+					traversableMovesArray.push(pos);
 				}
+				console.log("Shifting:"+moveOptions['legitMoves'][0]);
 				moveOptions['legitMoves'].shift();
 			};
+			console.log("traversableMovesArray");
+			console.log(traversableMovesArray);
 
 			if(bestMove == "none"){
-				bestMove = closestMove(moveOptions,bestMoveToPickFromArray);
+				bestMove = closestMove(moveOptions,traversableMovesArray);				
 			}
 
 		}
@@ -817,16 +986,17 @@ CONSTANT_loopSpeed = parseInt($('.easyVar.speed').text()),//200 default
 CONSTANT_boardsToCreate = parseInt($('.easyVar.boards').text());
 
 
-// createBoard("alpha",CONSTANT_height,CONSTANT_width,5,3);//broken
-// createBoard("alpha2",CONSTANT_height,CONSTANT_width,1,2);//broken
+// createBoard("alpha",CONSTANT_height,CONSTANT_width,6,6);//broken
+// createBoard("alpha2",CONSTANT_height,CONSTANT_width,3,6);//broken
 // createBoard("alpha",CONSTANT_height,CONSTANT_width,4,3);//broken
-// createBoard("alpha",CONSTANT_height,CONSTANT_width,17,18);//crashes
+
+createBoard("alpha",CONSTANT_height,CONSTANT_width,10,9);//12x12 - explain
 
 
-for (var i = 0; i < CONSTANT_boardsToCreate; i++) {
-	var foo = "place"+i;
-	createBoard(foo,CONSTANT_height,CONSTANT_width);
-};
+// for (var i = 0; i < CONSTANT_boardsToCreate; i++) {
+// 	var foo = "place"+i;
+// 	createBoard(foo,CONSTANT_height,CONSTANT_width);
+// };
 
 
 $(document).on("click",'.board',function(){
