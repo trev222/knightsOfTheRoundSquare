@@ -667,42 +667,81 @@ function doHolesNeedToBeFilled(boardElementID){
 }
 
 
-// there's something wrong with this, will check it out later
+// this fixes a few bugs, in the bigger maps
+// but slows it down a little
 function willThisBlockCreateA2x2Trap(boardElementID,block_x,block_y){
 	var moveOptions = viewBlockMoveOptions(boardElementID,block_x,block_y,1);
+	dance:
 	for (var i = 0; i < moveOptions['legitMoves'].length; i++) {
 		var twoByTwoArea = [];
 
-		var move = moveOptions['legitMoves'][i],
-				opposites1 = getOppositeDirections(move),
-				cords1 = moveCordsOneBlock(move,block_x,block_y),
+		var firstMove = moveOptions['legitMoves'][i],
+				opposites1 = getOppositeDirections(firstMove),
+				cords1 = moveCordsOneBlock(firstMove,block_x,block_y),
 				cords1_x = cords1['x'],
 				cords1_y = cords1['y'],
-				cords1MoveOptions = viewBlockMoveOptions(boardElementID,cords_x,cords1_y,1);
+				cords1MoveOptions = viewBlockMoveOptions(boardElementID,cords1_x,cords1_y,1);
 
 		twoByTwoArea["center1"] = {"x":cords1_x,"y":cords1_y};
 
-		if(cords1MoveOptions['legitMoves'].indexOf(move) == -1 ||
+		if(cords1MoveOptions['legitMoves'].indexOf(firstMove) == -1 ||
 			(cords1MoveOptions['legitMoves'].indexOf(opposites1['od1']) == -1 && 
 				cords1MoveOptions['legitMoves'].indexOf(opposites1['od2']) == -1))
 		{ 
+			// console.log("2x2Trap not possible firstMove: "+firstMove);
+			// console.log("moveOptions");
+			// console.log(moveOptions);
+
+			// console.log("opp:"+ opposites1['opp']);
+			// console.log("od1:"+ opposites1['od1']);
+			// console.log("od2:"+ opposites1['od2']);
+
 			continue;//it's not possible for this to create a hole 
 		}
 		// second moves from block
-		for (var n = 0; n < cords1MoveOptions['legitMoves'].length; n++) {
-			var cords1Move = cords1MoveOptions['legitMoves'][n],
-					cords2 = moveCordsOneBlock(cords1Move,cords1_x,cords1_y),
+		// console.log("FIRST MOVE:"+firstMove);
+		// console.log("cords: x:"+cords1_x+"y:"+cords1_y);
+		for (var n = 1; n <= 4; n++) {
+			if(n == 1){
+				var secondMove = "up";
+			}else if(n == 2){
+				var secondMove = "down";
+			}else if(n == 3){
+				var secondMove = "right";
+			}else if(n == 4){
+				var secondMove = "left";
+			}else{
+				continue;
+			}
+			if(opposites1['opp'] == secondMove){
+				continue;
+			}
+			var cords2 = moveCordsOneBlock(secondMove,cords1_x,cords1_y),
 					cords2_x = cords2['x'],
 					cords2_y = cords2['y'];
+
+					// console.log("secondMove:"+secondMove);
+					// console.log("moveAfterCords: x:"+cords2_x+"y:"+cords2_y);
+
+
 			
 			// third moves form block
-			if(cords1Move == move){
-				twoByTwoArea["center2"] = {"x":cords2_x,"y":cords2_y};//possible to add 1 block
+			if(secondMove == firstMove){
+				if(blockIsOpenAndExists(boardElementID,cords2_x,cords2_y)){
+					twoByTwoArea["center2"] = {"x":cords2_x,"y":cords2_y};//possible to add 1 block
+				}else{
+					// console.log("center2 does not exist or is not open. break dance");
+					break dance;
+				}
+				
 			}else{
-				var cords3 = moveCordsOneBlock(cords1Move,cords2_x,cords2_y),
-						cords3_x = cords2['x'],
-						cords3_y = cords2['y'];
-				if(blockIsOpenAndExists(boardElementID,cords3_x,cords3_y)){
+				var cords3 = moveCordsOneBlock(firstMove,cords2_x,cords2_y),
+						cords3_x = cords3['x'],
+						cords3_y = cords3['y'];
+						// console.log("thirdMove:"+firstMove);
+						// console.log("moveAfterCords: x:"+cords3_x+"y:"+cords3_y);
+				if(blockIsOpenAndExists(boardElementID,cords2_x,cords2_y) &&
+					blockIsOpenAndExists(boardElementID,cords3_x,cords3_y)){
 					if(twoByTwoArea["side1"] == undefined){
 						twoByTwoArea["side1"] = {"x":cords2_x,"y":cords2_y};
 						twoByTwoArea["side2"] = {"x":cords3_x,"y":cords3_y};
@@ -715,13 +754,30 @@ function willThisBlockCreateA2x2Trap(boardElementID,block_x,block_y){
 			}
 		};
 
-		if(twoByTwoArea.length == 6 || twoByTwoArea.length <= 3){
+		// array.length does not work for named keys
+		if(
+			(twoByTwoArea["center1"] == undefined || 
+			twoByTwoArea["center2"] == undefined ||
+			twoByTwoArea["side1"] == undefined || 
+			twoByTwoArea["side2"] == undefined) 
+			|| 
+			(twoByTwoArea["third1"] != undefined && 
+			twoByTwoArea["third2"] != undefined)
+			)
+		{
+			console.log("firstMove cannot create a trap: "+firstMove);
+			console.log(twoByTwoArea);
+			console.log("twoByTwoArea.length");
+			console.log(twoByTwoArea.length);
 			continue;
 		}
-		console.log("we've got a live one");
-		console.log(twoByTwoArea);
+		// console.log("we've got a live one");
+		// console.log(twoByTwoArea);
 
-		var openSides = [];
+
+		var openSides = [],
+				openSidesCount = 0;
+		// check each block, should only be 4
 		for (var m = 1; m <= 4; m++) {
 			if(m == 1){
 				var pos = "center1";
@@ -733,6 +789,7 @@ function willThisBlockCreateA2x2Trap(boardElementID,block_x,block_y){
 				var pos = "side2";
 			}else{ continue; }
 			openSides[pos] = "closed";
+			// console.log("inside the for loop pos:"+pos);
 
 			for (var v = 1; v <= 4; v++) {
 				if(v == 1){
@@ -746,10 +803,11 @@ function willThisBlockCreateA2x2Trap(boardElementID,block_x,block_y){
 				}else{continue;}
 				var cords4_x = twoByTwoArea[pos]['x'],
 						cords4_y = twoByTwoArea[pos]['y'],
-						cords5 = moveCordsOneBlock(cords1Move,cords4_x,cords4_y),
+						cords5 = moveCordsOneBlock(move,cords4_x,cords4_y),
 						cords5_x = cords5['x'],
 						cords5_y = cords5['y'];
 
+				// make sure this block isn't responding one of our 2x2 blocks
 				if( (cords5_x == twoByTwoArea["center1"]['x'] && cords5_y == twoByTwoArea["center1"]['y']) ||
 						(cords5_x == twoByTwoArea["center2"]['x'] && cords5_y == twoByTwoArea["center2"]['y']) ||
 						(cords5_x == twoByTwoArea["side1"]['x'] && cords5_y == twoByTwoArea["side1"]['y']) ||
@@ -758,29 +816,34 @@ function willThisBlockCreateA2x2Trap(boardElementID,block_x,block_y){
 				{
 					continue;
 				}
-				if(doesBlockExist(boardElementID,cords5_x,cords5_y) &&
-						(blockHasClass(className,boardElementID,cords5_x,cords5_y) || blockHasClass(className,boardElementID,cords5_x,cords5_y))
+				if(doesBlockExist(boardElementID,cords5_x,cords5_y) && !(cords5_x == block_x && cords5_y == block_y) &&
+						(blockHasClass("start",boardElementID,cords5_x,cords5_y) || blockHasClass("off",boardElementID,cords5_x,cords5_y))
 					)
 				{
 					openSides[pos] = "open";
+					openSidesCount++;
 					break;
 				}
 			};
-
-			if( (openSides['center1'] == "open" && openSides['center2'] == "closed" && openSides['side1'] == "closed") ||
+			console.log("openSides");
+			console.log(openSides);
+			console.log("openSidesCount:"+openSidesCount);
+			if(openSidesCount != 1 && 
+					((openSides['center1'] == "open" && openSides['center2'] == "closed" && openSides['side1'] == "closed") ||
 					(openSides['center2'] == "open" && openSides['center1'] == "closed" && openSides['side2'] == "closed") ||
 					(openSides['side1'] == "open" && openSides['center1'] == "closed" && openSides['side2'] == "closed") ||
-					(openSides['side2'] == "open" && openSides['center2'] == "closed" && openSides['side1'] == "closed")
+					(openSides['side2'] == "open" && openSides['center2'] == "closed" && openSides['side1'] == "closed"))
 				)
 			{
-				console.log("willThisBlockCreateA2x2Trap: true");
+				console.log("openSidesCount:"+openSidesCount);
+				console.log("willThisBlockCreateA2x2Trap: true move:"+firstMove);
 				return {"boolean":true};
 			}
 
 		};
 	};
 
-	console.log("willThisBlockCreateA2x2Trap: false");
+	// console.log("willThisBlockCreateA2x2Trap: false");
 	return {"boolean":false};
 
 }
@@ -793,8 +856,6 @@ function willThisBlockCreateA2x2Trap(boardElementID,block_x,block_y){
 // ============================================================================================
 
 function thinkTank(){
-	// console.log("thinkTank");
-	// console.log(activeBoards);
 	if(activeBoards.length == 0){
 		clearInterval(thinkTankLoop_timer);
 		thinkTankLoop_timer = 0;
@@ -813,7 +874,7 @@ function thinkTank(){
 		
 		var bestMove = "none";
 		// if no moves, ya done
-		// if one move, it's obvious
+		// if one move, it's king of obvious
 		if(moveOptions["legitMoves"].length == 0){
 			for (var i = 1; i <= 4; i++) {
 				if(i == 1){
@@ -843,31 +904,28 @@ function thinkTank(){
 			bestMove = doHolesExist['fillHoleSide'];
 		}
 
-		// // will this move make a trap
-		// console.log("trap before if");
-		// console.log("bestMove:"+bestMove);
-		// if(bestMove == "none"){
-		// 	for (var i = 0; i < moveOptions['legitMoves'].length; i++) {
-		// 		var move = moveOptions['legitMoves'][i];
-		// 		console.log("move:"+move);
-		// 		var cords = moveCordsOneBlock(move,x,y),
-		// 				cord_x = cords['x'],
-		// 				cord_y = cords['y'];
-		// 				console.log("cord_x:"+cord_x+" cord_y:"+cord_y);
-
-		// 		console.log("checking trap");
-		// 		var res = willThisBlockCreateA2x2Trap(boardElementID,cord_x,cord_y);
-		// 		console.log("trap check ended");
-		// 		console.log(res['boolean']);
-		// 		if(res['boolean'] == true){
-		// 			var index = moveOptions['legitMoves'].indexOf(move);
-		// 			if(index != -1){
-		// 				moveOptions['legitMoves'].splice(index,1);
-		// 				i = i-1;
-		// 			}
-		// 		}
-		// 	};
-		// }
+		// will this move make a trap
+		// traps only really occur on bigger maps
+		// and this slows down 8x8 considerably
+		if(bestMove == "none" && 
+			(CONSTANT_height >= 12 && CONSTANT_width >= 12 || $("#"+boardElementID).hasClass("userTouched")))
+		{
+			// check each possible move
+			for (var i = 0; i < moveOptions['legitMoves'].length; i++) {
+				var move = moveOptions['legitMoves'][i];
+				var cords = moveCordsOneBlock(move,x,y),
+						cord_x = cords['x'],
+						cord_y = cords['y'];
+				var res = willThisBlockCreateA2x2Trap(boardElementID,cord_x,cord_y);
+				if(res['boolean'] == true){
+					var index = moveOptions['legitMoves'].indexOf(move);
+					if(index != -1){
+						moveOptions['legitMoves'].splice(index,1);
+						i = i-1;
+					}
+				}
+			};
+		}
 
 
 		//traversable
@@ -877,12 +935,8 @@ function thinkTank(){
 			var active_x = parseInt($("#"+boardElementID+" .active").attr('x')),
 					active_y = parseInt($("#"+boardElementID+" .active").attr('y'));
 
-			// for (var i = 0; i < moveOptions['legitMoves'].length; i++) {
 			while(moveOptions['legitMoves'].length >= 1){
-				console.log("moveOptions");
-				console.log(moveOptions['legitMoves']);
 				var pos = moveOptions['legitMoves'][0];
-
 
 				var cords = moveCordsOneBlock(pos,active_x,active_y),
 						x = parseInt(cords['x']),
@@ -891,35 +945,24 @@ function thinkTank(){
 				var result = traverseAllPathsIsPossible(boardElementID,x,y);
 				if(result['boolean'] == false){//openOn
 					var openOn = result['openOn'];
-					console.log("openOn:"+openOn);
-
 
 					if(openOn == "opposite"){
 						var opposites = getOppositeDirections(pos),
 								openOn = opposites['opp'];
 					}
 					
-					console.log("openOn:"+openOn);
-					
-					console.log("moveOptions");
-					console.log(moveOptions['legitMoves']);
-					console.log("openOnIndex:"+openOnIndex);
 					if(openOn != "null"){
-						console.log("checking openOn");
 						var cords = moveCordsOneBlock(openOn,active_x,active_y),
 								x = parseInt(cords['x']),
 								y = parseInt(cords['y']);
 
 						var result2 = traverseAllPathsIsPossible(boardElementID,x,y);
 						if(result2['boolean'] == true){
-							console.log("openOn was true");
 							bestMove = openOn;
 							break;
 						}else{
 							var openOnIndex = moveOptions['legitMoves'].indexOf(openOn);
-							console.log("openOn was false");
 							if(openOnIndex != -1){
-								console.log("splicing :"+pos);
 								moveOptions['legitMoves'].splice(openOnIndex,1);
 								if(openOnIndex == 0){
 									continue;
@@ -930,11 +973,8 @@ function thinkTank(){
 				}else{
 					traversableMovesArray.push(pos);
 				}
-				console.log("Shifting:"+moveOptions['legitMoves'][0]);
 				moveOptions['legitMoves'].shift();
 			};
-			console.log("traversableMovesArray");
-			console.log(traversableMovesArray);
 
 			if(bestMove == "none"){
 				bestMove = closestMove(moveOptions,traversableMovesArray);				
@@ -988,7 +1028,7 @@ CONSTANT_boardsToCreate = parseInt($('.easyVar.boards').text());
 
 // createBoard("alpha",CONSTANT_height,CONSTANT_width,6,6);//broken
 // createBoard("alpha2",CONSTANT_height,CONSTANT_width,3,6);//broken
-// createBoard("alpha",CONSTANT_height,CONSTANT_width,4,3);//broken
+// createBoard("alpha",CONSTANT_height,CONSTANT_width,12,17);//broken
 // createBoard("alpha",CONSTANT_height,CONSTANT_width,10,9);//12x12 - explain
 
 
