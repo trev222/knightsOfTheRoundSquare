@@ -3,7 +3,7 @@
 
 #### Just a fun challenge I read about on Quora.
 #### Here are the rules
-1. Start with a grid that has even numbers. Ideally 8x8
+1. Start with a grid that has **_even_** numbers. Ideally 8x8
 2. Have a program randomly select a starting block on that grid
 3. Then have the program move to each block once until it has visted each block only once.
 4. Have it return to the start point.
