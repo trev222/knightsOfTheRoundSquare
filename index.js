@@ -1,88 +1,3 @@
-<!DOCTYPE html>
-<head>
-	<title>Knights of the round square</title>
-	<script
-  src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
-  integrity="sha256-k2WSCIexGzOj3Euiig+TlR8gA0EmPjuc79OEeY5L45g="
-  crossorigin="anonymous"></script>
-</head>
-<style type="text/css">
-	*{
-		margin: 0px;padding: 0px;
-		-moz-box-sizing: border-box;
-		-webkit-box-sizing: border-box;
-		box-sizing: border-box;
-	}
-	.board{
-		float: left;
-		padding: 5px;
-	}
-	.board.success{
-		background-color: rgba(0,255,0,.2);
-	}
-	.board.failed{
-		background-color: rgba(255,0,0,.2);
-	}
-	.board.selected{
-		background-color: rgba(255,255,0,.2);
-	}
-	.board.selected.success{
-		box-shadow: inset 0px 0px 3px 5px rgba(0,255,0,.5);
-	}
-	.board.selected.failed{
-		box-shadow: inset 0px 0px 3px 5px rgba(255,0,0,.5);
-	}
-
-	.box{
-		margin: 3px;
-		height: 20px; width: 20px;
-		border: 1px solid black;
-		float: left;
-	}
-	.box.on{
-		background-color: blue;
-	}
-	.box.beenHereAlready{
-		background-color: red;
-	}
-	.box.start{
-		background-color: green;
-	}
-	.box.traversedBlock{
-		background-color: rgba(255,0,255,.4);
-	}
-	.box.active{
-		border: 4px solid orange;
-	}
-	#playButton,#new{
-		margin: 10px;
-		width: 100%;
-		max-width: 200px;
-		height: 40px;
-	}
-</style>
-
-
-
-<body>
-	<button id="new">new</button>
-	<button id="playButton">start/stop</button>
-	<!-- 
-	Keep in mind, this is JavaScript. 
-	High numbers will crash your browser. 
-	-->
-	<ul style="display:none;">
-		<li class="easyVar height">8</li><!--8-->
-		<li class="easyVar width">8</li><!--8-->
-		<li class="easyVar speed">25</li><!--50-->
-		<li class="easyVar boards">2</li><!--1-->
-	</ul>
-
-</body>
-
-
-
-<script type="text/javascript">
 
 // ============================================================================================
 // == General Start
@@ -1093,7 +1008,6 @@ $('body').on("keyup",function(e){
 			break;
 		default:
 			return;
-			break;
 	}
 	if(direction == "command"){
 		thinkTank();
@@ -1108,6 +1022,3 @@ $('body').on("keyup",function(e){
 	}
 	
 });
-
-</script>
-</html>
